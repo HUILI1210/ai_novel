@@ -1,0 +1,69 @@
+/* 樱花飘落特效 */
+.sakura-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.sakura-petal {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #ffb7c5 0%, #ff69b4 50%, #ffb7c5 100%);
+  border-radius: 50% 0 50% 50%;
+  opacity: 0.8;
+  animation: sakura-fall linear infinite;
+  filter: drop-shadow(0 0 2px rgba(255, 182, 193, 0.5));
+}
+
+.sakura-petal::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  border-radius: inherit;
+  transform: rotate(90deg);
+}
+
+@keyframes sakura-fall {
+  0% {
+    transform: translateY(-10vh) translateX(0) rotate(0deg) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(110vh) translateX(100px) rotate(720deg) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* 不同大小和速度的花瓣变体 */
+.sakura-petal.small {
+  width: 8px;
+  height: 8px;
+  opacity: 0.6;
+}
+
+.sakura-petal.large {
+  width: 16px;
+  height: 16px;
+  opacity: 0.9;
+}
+
+/* 横向摆动效果 */
+@keyframes sakura-sway {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(30px);
+  }
+}

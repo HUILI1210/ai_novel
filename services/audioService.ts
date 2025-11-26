@@ -106,11 +106,11 @@ class AudioService {
 
         if (type === 'type') {
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, now);
-            gain.gain.setValueAtTime(0.02, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.frequency.setValueAtTime(600, now);
+            gain.gain.setValueAtTime(0.015, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
             osc.start(now);
-            osc.stop(now + 0.05);
+            osc.stop(now + 0.03);
         } else if (type === 'click') {
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(600, now);

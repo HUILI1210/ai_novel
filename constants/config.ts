@@ -4,7 +4,7 @@
 
 // 打字效果配置
 export const TYPING_SPEED_MS = 30;
-export const TYPING_SOUND_INTERVAL = 3;
+export const TYPING_SOUND_INTERVAL = 5;
 
 // 好感度配置
 export const AFFECTION_MIN = 0;
@@ -22,8 +22,12 @@ export const SCENE_TRANSITION_DURATION = 800;
 export const FADE_DURATION = 1000;
 
 // ============ AI 提供商选择 ============
-// 'gemini' = Google Gemini | 'dashscope' = 阿里云 DashScope
-export const AI_PROVIDER: 'gemini' | 'dashscope' = 'dashscope';
+// 'openrouter' = OpenRouter (Gemini) | 'gemini' = Google Gemini
+export const AI_PROVIDER: 'openrouter' | 'gemini' = 'openrouter';
+
+// ============ OpenRouter 配置 ============
+export const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1';
+export const OPENROUTER_MODEL = 'google/gemini-2.5-flash';
 
 // ============ 通用配置 ============
 export const AI_TEMPERATURE = 0.8;
@@ -36,13 +40,7 @@ export const GEMINI_IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';  
 export const GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 export const GEMINI_TTS_VOICE = 'Leda';
 
-// ============ 阿里云 DashScope 配置 ============
-export const DASHSCOPE_TEXT_MODEL = 'qwen-plus';
-export const DASHSCOPE_IMAGE_MODEL = 'wanx-v1';             // 通义万相
-export const COSY_VOICE_MODEL = 'cosyvoice-v2';           // 使用 v2 版本，更稳定
-export const COSY_VOICE_NAME = 'longxiaochun_v2';         // 中文女声，温柔甜美
-
 // 角色配置
-export const CHARACTER_NAME = '爱子';
+export const CHARACTER_NAME = '雯曦';
 export const PLAYER_NAME = '你';
 export const NARRATOR_NAME = '旁白';

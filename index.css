@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #ec4899;
+  --color-bg: #0f172a;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: white;
+  font-family: 'Noto Sans SC', 'Nunito', sans-serif;
+}

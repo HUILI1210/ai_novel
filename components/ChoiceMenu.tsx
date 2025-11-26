@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { GameChoice } from '../types';
 import { audioService } from '../services/audioService';
+import { useTheme } from '../contexts/ThemeContext';
 import '../styles/animations.css';
 
 interface ChoiceMenuProps {
@@ -10,6 +11,8 @@ interface ChoiceMenuProps {
 }
 
 export const ChoiceMenu: React.FC<ChoiceMenuProps> = memo(({ choices, onChoose, visible }) => {
+  const { themeConfig } = useTheme();
+  
   if (!visible) return null;
 
   return (
@@ -28,10 +31,14 @@ export const ChoiceMenu: React.FC<ChoiceMenuProps> = memo(({ choices, onChoose, 
                 audioService.playSfx('click');
                 onChoose(choice.text);
             }}
-            className="group relative px-8 py-5 bg-slate-800/80 border border-slate-600/50 text-slate-200 text-lg rounded-xl
+            className="group relative px-8 py-5 text-lg rounded-xl
                        overflow-hidden transition-all duration-300 ease-out 
-                       hover:scale-105 hover:border-pink-500/50 hover:shadow-[0_0_30px_rgba(236,72,153,0.3)]
-                       animate-slideIn"
+                       hover:scale-105 animate-slideIn"
+            style={{
+              background: themeConfig.choiceButton.background,
+              border: themeConfig.choiceButton.border,
+              color: themeConfig.choiceButton.textColor
+            }}
           >
             {/* Hover Gradient Background */}
             <div className="absolute inset-0 bg-gradient-to-r from-pink-900/0 via-pink-900/40 to-purple-900/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] ease-in-out" style={{ transitionDuration: '1s' }}></div>

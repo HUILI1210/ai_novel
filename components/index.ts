@@ -14,3 +14,11 @@ export { ErrorBoundary } from './ErrorBoundary';
 // Screen Components
 export { MainMenu } from './MainMenu';
 export { GameOverScreen } from './GameOverScreen';
+
+// New Feature Components
+export { PauseMenu } from './PauseMenu';
+export { HistoryPanel } from './HistoryPanel';
+export { CGScene } from './CGScene';
+export { ScriptLibrary } from './ScriptLibrary';
+export { ScriptEditor } from './ScriptEditor';
+export { SakuraEffect } from './SakuraEffect';

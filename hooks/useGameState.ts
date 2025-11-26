@@ -1,8 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
-import { startNewGame, makeChoice, generateCharacterImage, generateSpeech } from '../services/aiService';
-import { GameState } from '../types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  startNewGame, 
+  makeChoice, 
+  generateCharacterImage, 
+  generateSpeech, 
+  setCustomScript, 
+  resetToDefaultScript, 
+  generatePlotFramework,
+  startNewGameBatch,
+  generateBranchDialogue,
+  resetBatchHistory,
+  cleanBatchDialogueData
+} from '../services/aiService';
+import { GameState, SceneData, ScriptTemplate, DialogueNode, BatchSceneData, CharacterExpression, BackgroundType, BgmMood } from '../types';
 import { audioService } from '../services/audioService';
 import { AFFECTION_MIN, AFFECTION_MAX, AFFECTION_INITIAL } from '../constants/config';
+import { saveRecord, determineEndingType } from '../services/gameRecordService';
+import { DialogueCacheService } from '../services/dialogueCacheService';
 
 const INITIAL_STATE: GameState = {
   currentScene: null,
@@ -11,6 +25,10 @@ const INITIAL_STATE: GameState = {
   isLoading: false,
   gameStarted: false,
   turn: 0,
+  isPaused: false,
+  dialogueOpacity: 90,
+  prefetchedScene: null,
+  prefetchedImage: null,
 };
 
 export function useGameState() {
@@ -21,8 +39,17 @@ export function useGameState() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isVoiceLoading, setIsVoiceLoading] = useState(false);
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
   const [spriteCache, setSpriteCache] = useState<Record<string, string>>({});
   const [currentSpriteUrl, setCurrentSpriteUrl] = useState<string | null>(null);
+  const [currentScript, setCurrentScript] = useState<ScriptTemplate | null>(null);
+  
+  // 本地对话队列管理 (替代 StoryBufferService)
+  const [dialogueQueue, setDialogueQueue] = useState<DialogueNode[]>([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [currentBatchChoices, setCurrentBatchChoices] = useState<{ text: string; sentiment: string }[]>([]);
+  const [currentBatchBackground, setCurrentBatchBackground] = useState<string>('school_rooftop');
+  const [currentBatchBgm, setCurrentBatchBgm] = useState<string>('daily');
 
   // 检查是否有可用的 API Key
   const hasApiKey = !!(process.env.GEMINI_API_KEY || (process.env.DASHSCOPE_API_KEY && process.env.DASHSCOPE_API_KEY !== 'your-dashscope-api-key'));
@@ -34,47 +61,13 @@ export function useGameState() {
     }
   }, [gameState.currentScene?.bgm]);
 
-  // Image Generation Effect
-  useEffect(() => {
-    const updateSprite = async () => {
-      if (!gameState.currentScene) return;
-      const expression = gameState.currentScene.expression;
-
-      // Check cache first
-      if (spriteCache[expression]) {
-        setCurrentSpriteUrl(spriteCache[expression]);
-        return;
-      }
-
-      // Generate new image
-      try {
-        const url = await generateCharacterImage(expression);
-        if (url) {
-          setSpriteCache(prev => ({ ...prev, [expression]: url }));
-          setGameState(current => {
-            if (current.currentScene?.expression === expression) {
-              setCurrentSpriteUrl(url);
-            }
-            return current;
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load sprite", e);
-      }
-    };
-
-    updateSprite();
-    // Note: spriteCache is intentionally omitted to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.currentScene?.expression]);
-
   // Voice Generation Effect
   useEffect(() => {
     const playVoiceLine = async () => {
       if (!isVoiceEnabled || !gameState.currentScene) return;
       
       // Only voice Aiko
-      if (gameState.currentScene.speaker !== '爱子') return;
+      if (gameState.currentScene.speaker !== '雯曦' && gameState.currentScene.speaker !== currentScript?.character.name) return;
 
       setIsVoiceLoading(true);
       try {
@@ -90,8 +83,29 @@ export function useGameState() {
     };
     
     playVoiceLine();
-  }, [gameState.currentScene, isVoiceEnabled]);
+  }, [gameState.currentScene, isVoiceEnabled, currentScript]);
 
+  // 辅助函数：将 DialogueNode 转换为 SceneData
+  const dialogueNodeToSceneData = useCallback((
+    node: DialogueNode, 
+    choices: { text: string; sentiment: string }[],
+    defaultBg: string,
+    defaultBgm: string
+  ): SceneData => {
+    return {
+      narrative: node.narrative || '',
+      speaker: node.speaker,
+      dialogue: node.dialogue,
+      expression: node.expression as CharacterExpression,
+      background: (node.background || defaultBg) as BackgroundType,
+      bgm: (node.bgm || defaultBgm) as BgmMood,
+      choices: choices as any,
+      affectionChange: 0,
+      isGameOver: false
+    };
+  }, []);
+
+  // 处理游戏开始
   const handleStartGame = useCallback(async () => {
     if (!hasApiKey) {
       setError("环境变量中缺失 API_KEY。");
@@ -105,60 +119,220 @@ export function useGameState() {
     setError(null);
     
     try {
-      const firstScene = await startNewGame();
-      setGameState({
-        currentScene: firstScene,
-        history: [firstScene],
-        affection: AFFECTION_INITIAL,
-        isLoading: false,
-        gameStarted: true,
-        turn: 1,
-      });
+      // 检查是否有缓存的第一个预设剧本数据
+      const dialogueCache = DialogueCacheService.getInstance();
+      let batchData: BatchSceneData;
+      
+      if (dialogueCache.hasCachedBatchData('preset_tsundere')) {
+        console.log('[Game] 使用缓存的初始对话序列');
+        batchData = cleanBatchDialogueData(dialogueCache.getCachedBatchData('preset_tsundere')!);
+      } else {
+        console.log('[Game] 开始生成初始对话序列...');
+        batchData = await startNewGameBatch();
+      }
+      
+      console.log(`[Game] 获取了 ${batchData.dialogueSequence.length} 轮对话`);
+      
+      // 初始化队列状态
+      setDialogueQueue(batchData.dialogueSequence);
+      setQueueIndex(0);
+      setCurrentBatchChoices(batchData.choices);
+      setCurrentBatchBackground(batchData.background);
+      setCurrentBatchBgm(batchData.bgm);
+      
+      // 显示第一句
+      if (batchData.dialogueSequence.length > 0) {
+        const firstNode = batchData.dialogueSequence[0];
+        const firstScene = dialogueNodeToSceneData(
+          firstNode, 
+          batchData.choices, 
+          batchData.background, 
+          batchData.bgm
+        );
+        
+        setGameState(prev => ({
+          ...prev,
+          currentScene: firstScene,
+          history: [firstScene],
+          affection: AFFECTION_INITIAL,
+          isLoading: false,
+          gameStarted: true,
+          turn: 1,
+        }));
+      } else {
+        throw new Error("生成的对话序列为空");
+      }
+      
     } catch (err) {
+      console.error('[Game] 游戏启动失败:', err);
       setError("游戏启动失败，请重试。");
       setGameState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [hasApiKey]);
+  }, [hasApiKey, dialogueNodeToSceneData]);
 
+  // 处理玩家选择
   const handleChoice = useCallback(async (choiceText: string) => {
     setShowChoices(false);
     setGameState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const nextScene = await makeChoice(choiceText);
+      const choice = gameState.currentScene?.choices.find(c => c.text === choiceText);
+      const sentiment = choice?.sentiment || 'neutral';
       
-      setGameState(prev => {
-        const newAffection = Math.min(
-          AFFECTION_MAX, 
-          Math.max(AFFECTION_MIN, prev.affection + (nextScene.affectionChange || 0))
+      console.log(`[Game] 玩家选择: "${choiceText}" (${sentiment})，开始生成下一段...`);
+      
+      // 实时生成下一大段剧情
+      const branchData = await generateBranchDialogue(choiceText, sentiment);
+      const cleanedData = cleanBatchDialogueData(branchData);
+      
+      console.log(`[Game] 生成完成，包含 ${cleanedData.dialogueSequence.length} 轮对话`);
+      
+      // 更新队列状态
+      setDialogueQueue(cleanedData.dialogueSequence);
+      setQueueIndex(0);
+      setCurrentBatchChoices(cleanedData.choices);
+      setCurrentBatchBackground(cleanedData.background);
+      setCurrentBatchBgm(cleanedData.bgm);
+      
+      // 显示新片段的第一句
+      if (cleanedData.dialogueSequence.length > 0) {
+        const firstNode = cleanedData.dialogueSequence[0];
+        const newScene = dialogueNodeToSceneData(
+          firstNode, 
+          cleanedData.choices, 
+          cleanedData.background, 
+          cleanedData.bgm
         );
-        return {
-          ...prev,
-          currentScene: nextScene,
-          history: [...prev.history, nextScene],
-          affection: newAffection,
-          isLoading: false,
-          turn: prev.turn + 1
-        };
-      });
+        
+        // 应用好感度变化
+        setGameState(prev => {
+          const newAffection = Math.min(
+            AFFECTION_MAX, 
+            Math.max(AFFECTION_MIN, prev.affection + (cleanedData.affectionChange || 0))
+          );
+          return {
+            ...prev,
+            currentScene: newScene,
+            history: [...prev.history, newScene],
+            affection: newAffection,
+            isLoading: false,
+            turn: prev.turn + 1
+          };
+        });
+      } else {
+        // 如果生成的序列为空（可能是直接结局），显示选项或结束
+        if (cleanedData.isGameOver) {
+           // TODO: 处理直接GameOver的情况
+           setGameState(prev => ({ ...prev, isLoading: false }));
+        } else {
+           setShowChoices(true);
+           setGameState(prev => ({ ...prev, isLoading: false }));
+        }
+      }
+      
     } catch (err) {
+      console.error('[Game] 加载下一幕失败:', err);
       setError("加载下一幕失败。");
       setGameState(prev => ({ ...prev, isLoading: false }));
     }
-  }, []);
+  }, [gameState.currentScene?.choices, dialogueNodeToSceneData]);
 
   const handleToggleMute = useCallback(() => {
     const muted = audioService.toggleMute();
     setIsMuted(muted);
   }, []);
 
+  // 处理下一句对话
   const handleNextDialogue = useCallback(() => {
     if (gameState.isLoading) return;
     if (showChoices) return;
     if (gameState.currentScene?.isGameOver) return;
 
-    setShowChoices(true);
-  }, [gameState.isLoading, showChoices, gameState.currentScene?.isGameOver]);
+    const nextIndex = queueIndex + 1;
+    
+    // 检查队列是否还有剩余对话
+    if (nextIndex < dialogueQueue.length) {
+      // 显示下一句
+      setQueueIndex(nextIndex);
+      const nextNode = dialogueQueue[nextIndex];
+      
+      console.log(`[Game] 显示对话 ${nextIndex + 1}/${dialogueQueue.length}: ${nextNode.speaker}`);
+      
+      const nextScene = dialogueNodeToSceneData(
+        nextNode,
+        currentBatchChoices,
+        currentBatchBackground,
+        currentBatchBgm
+      );
+      
+      setGameState(prev => ({
+        ...prev,
+        currentScene: nextScene,
+        history: [...prev.history, nextScene]
+      }));
+    } else {
+      // 队列播放完毕，显示选项
+      console.log('[Game] 对话序列结束，显示选项');
+      setShowChoices(true);
+    }
+  }, [gameState.isLoading, showChoices, gameState.currentScene?.isGameOver, queueIndex, dialogueQueue, currentBatchChoices, currentBatchBackground, currentBatchBgm, dialogueNodeToSceneData]);
+
+  const toggleAutoPlay = useCallback(() => {
+    setIsAutoPlay(prev => !prev);
+  }, []);
+
+  // 保持最新的 handleNextDialogue 引用
+  const handleNextRef = useRef(handleNextDialogue);
+  useEffect(() => {
+    handleNextRef.current = handleNextDialogue;
+  }, [handleNextDialogue]);
+
+  // Auto Play Effect
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    
+    // 只有在非打字状态、非加载状态、非选择状态、非暂停状态且游戏未结束时才自动播放
+    if (isAutoPlay && !isTyping && !gameState.isLoading && !showChoices && !gameState.isPaused && !gameState.currentScene?.isGameOver) {
+      // 计算延迟：根据文本长度动态调整
+      // 基础延迟 1.5秒 + 每个字符 100ms
+      const textLength = gameState.currentScene?.dialogue?.length || 0;
+      // 如果开启了语音，给予更多时间 (假设语速较慢)
+      const charTime = isVoiceEnabled ? 250 : 150;
+      const baseDelay = isVoiceEnabled ? 2000 : 1500;
+      
+      const delay = Math.max(2000, textLength * charTime + baseDelay);
+      
+      console.log(`[AutoPlay] Starting timer for next dialogue. Delay: ${delay}ms`);
+
+      timeout = setTimeout(() => {
+        console.log('[AutoPlay] Timer triggered, calling handleNextDialogue');
+        // 再次检查状态（防止在延迟期间状态改变）
+        if (!showChoices && !gameState.isPaused) {
+          handleNextRef.current();
+        }
+      }, delay);
+    } else {
+      if (isAutoPlay) {
+        console.log('[AutoPlay] Paused/Waiting conditions:', { isTyping, isLoading: gameState.isLoading, showChoices, isPaused: gameState.isPaused });
+      }
+    }
+    
+    return () => {
+      if (timeout) {
+        // console.log('[AutoPlay] Timer cleared');
+        clearTimeout(timeout);
+      }
+    };
+  }, [
+    isAutoPlay, 
+    isTyping, 
+    gameState.isLoading, 
+    showChoices, 
+    gameState.isPaused, 
+    gameState.currentScene?.dialogue, // 只依赖对话文本，而不是整个场景对象
+    gameState.turn, // 依赖回合数
+    isVoiceEnabled
+  ]);
 
   const toggleVoice = useCallback(() => {
     setIsVoiceEnabled(prev => !prev);
@@ -166,6 +340,124 @@ export function useGameState() {
 
   const clearError = useCallback(() => {
     setError(null);
+  }, []);
+
+  // 暂停/继续
+  const togglePause = useCallback(() => {
+    setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));
+  }, []);
+
+  // 设置对话框透明度
+  const setDialogueOpacity = useCallback((opacity: number) => {
+    setGameState(prev => ({ ...prev, dialogueOpacity: opacity }));
+  }, []);
+
+  // 返回标题
+  const returnToTitle = useCallback(() => {
+    resetToDefaultScript();
+    resetBatchHistory();
+    setDialogueQueue([]);
+    setQueueIndex(0);
+    setGameState(INITIAL_STATE);
+    setShowChoices(false);
+    setError(null);
+  }, []);
+
+  // 使用自定义剧本开始游戏
+  const startWithScript = useCallback(async (script: ScriptTemplate) => {
+    if (!hasApiKey) {
+      setError("环境变量中缺失 API_KEY。");
+      return;
+    }
+
+    setCurrentScript(script);
+    setCustomScript(
+      script.character.name,
+      script.character.personality,
+      script.setting,
+      script.plotFramework
+    );
+
+    await audioService.init();
+    audioService.playSfx('start');
+
+    setGameState(prev => ({ ...prev, isLoading: true }));
+    setError(null);
+    
+    try {
+      // 检查是否有缓存
+      const dialogueCache = DialogueCacheService.getInstance();
+      let batchData: BatchSceneData;
+      
+      if (dialogueCache.hasCachedBatchData(script.id)) {
+        console.log(`[Game] 使用缓存的对话序列: ${script.name}`);
+        batchData = cleanBatchDialogueData(dialogueCache.getCachedBatchData(script.id)!);
+      } else {
+        console.log(`[Game] 未找到缓存，实时生成: ${script.name}`);
+        batchData = await startNewGameBatch();
+        
+        // 缓存生成的数据
+        setTimeout(() => {
+          dialogueCache.generateAndCacheBatchData(script).catch(error => {
+            console.warn('缓存对话序列失败:', error);
+          });
+        }, 100);
+      }
+      
+      console.log(`[Game] 获取到 ${batchData.dialogueSequence.length} 轮对话`);
+      
+      setDialogueQueue(batchData.dialogueSequence);
+      setQueueIndex(0);
+      setCurrentBatchChoices(batchData.choices);
+      setCurrentBatchBackground(batchData.background);
+      setCurrentBatchBgm(batchData.bgm);
+      
+      if (batchData.dialogueSequence.length > 0) {
+        const firstNode = batchData.dialogueSequence[0];
+        const firstScene = dialogueNodeToSceneData(
+          firstNode, 
+          batchData.choices, 
+          batchData.background, 
+          batchData.bgm
+        );
+        
+        setGameState(prev => ({
+          ...prev,
+          currentScene: firstScene,
+          history: [firstScene],
+          affection: AFFECTION_INITIAL,
+          isLoading: false,
+          gameStarted: true,
+          turn: 1,
+        }));
+      } else {
+        throw new Error("生成的对话序列为空");
+      }
+      
+    } catch (err) {
+      console.error('[Game] 游戏启动失败:', err);
+      setError("游戏启动失败，请重试。");
+      setGameState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [hasApiKey, dialogueNodeToSceneData]);
+
+  // 保存通关记录
+  const saveGameRecord = useCallback(() => {
+    if (!currentScript) return;
+    
+    saveRecord({
+      scriptId: currentScript.id,
+      scriptName: currentScript.name,
+      characterName: currentScript.character.name,
+      endingType: determineEndingType(gameState.affection),
+      finalAffection: gameState.affection,
+      turnsPlayed: gameState.turn
+    });
+  }, [currentScript, gameState.affection, gameState.turn]);
+
+  // 生成剧情框架
+  const handleGeneratePlot = useCallback(async (prompt: string): Promise<string> => {
+    return generatePlotFramework(prompt);
   }, []);
 
   return {
@@ -178,12 +470,27 @@ export function useGameState() {
     isVoiceEnabled,
     isVoiceLoading,
     currentSpriteUrl,
+    currentScript,
     hasApiKey,
+    // 自动播放状态
+    isAutoPlay,
+    // 缓冲系统状态 (Mocked for compatibility)
+    isPreloading: false,
+    preloadProgress: 0,
+    bufferedChoicesCount: 0,
+    // 方法
     handleStartGame,
     handleChoice,
     handleToggleMute,
     handleNextDialogue,
     toggleVoice,
+    toggleAutoPlay,
     clearError,
+    togglePause,
+    setDialogueOpacity,
+    returnToTitle,
+    startWithScript,
+    handleGeneratePlot,
+    saveGameRecord,
   };
 }
