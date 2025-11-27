@@ -2,61 +2,8 @@ import React, { useState, useEffect, memo, useMemo } from 'react';
 import { audioService } from '../services/audioService';
 import { TYPING_SPEED_MS, TYPING_SOUND_INTERVAL } from '../constants/config';
 import { useTheme } from '../contexts/ThemeContext';
+import { cleanText } from '../utils/textCleaner';
 import '../styles/animations.css';
-
-/**
- * 清理对话文本，修复AI生成的常见错误
- */
-const cleanDialogueText = (text: string): string => {
-  if (!text) return '';
-  
-  let cleaned = text;
-  
-  // 第一步：修复特定的漏字问题（在重复字清理之前）
-  const preFixPatterns: [RegExp, string][] = [
-    [/樱飞飞/g, '樱花飞'],
-    [/樱飞散/g, '樱花飞散'],
-    [/放后/g, '放学后'],
-    [/回到到校/g, '回到学校'],
-    [/到到校/g, '到学校'],
-    [/谁你担心/g, '谁要你担心'],
-  ];
-  
-  for (const [pattern, replacement] of preFixPatterns) {
-    cleaned = cleaned.replace(pattern, replacement);
-  }
-  
-  // 第二步：修复连续重复的汉字
-  cleaned = cleaned.replace(/(.)\1{1,}/g, (match, char) => {
-    // 保留合法的重复字符
-    const allowedRepeats = ['。', '！', '？', '…', '.', '!', '?', '～', '~', '哈', '呵', '嘿', '嗯', '啊', '呀', '哦', '噢'];
-    if (allowedRepeats.includes(char)) {
-      return match.length > 3 ? char.repeat(3) : match;
-    }
-    return char;
-  });
-  
-  // 第三步：修复重复字清理后的残留问题
-  const postFixPatterns: [RegExp, string][] = [
-    [/樱飞散/g, '樱花飞散'],
-    [/樱飞的/g, '樱花飞的'],
-    [/回学校/g, '回到学校'],
-    [/回到校/g, '回到学校'],
-    [/回到学取/g, '回到学校取'],
-    [/到校取/g, '到学校取'],
-  ];
-  
-  for (const [pattern, replacement] of postFixPatterns) {
-    cleaned = cleaned.replace(pattern, replacement);
-  }
-  
-  // 修复括号不匹配
-  if (cleaned.includes('）') && !cleaned.includes('（')) {
-    cleaned = '（' + cleaned;
-  }
-  
-  return cleaned.trim();
-};
 
 interface DialogueBoxProps {
   speaker: string;
@@ -89,7 +36,7 @@ export const DialogueBox: React.FC<DialogueBoxProps> = memo(({
   const { themeConfig } = useTheme();
 
   // 清理后的文本
-  const cleanedText = useMemo(() => cleanDialogueText(text), [text]);
+  const cleanedText = useMemo(() => cleanText(text), [text]);
 
   useEffect(() => {
     const localCleanedText = cleanedText; // 捕获当前值避免闭包问题

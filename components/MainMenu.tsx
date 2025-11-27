@@ -7,7 +7,7 @@ import { SakuraEffect } from './SakuraEffect';
 import { AI_PROVIDER } from '../constants/config';
 
 // 女主角立绘URL (使用本地透明背景图片)
-const HEROINE_IMAGE = '/characters/elena_base.png';
+const HEROINE_IMAGE = '/stories/02_princess_elena/expressions/elena_base.png';
 
 interface MainMenuProps {
   hasApiKey: boolean;
@@ -96,7 +96,7 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
       {!hasApiKey ? (
         <div className="p-6 bg-red-900/80 border-l-4 border-red-500 rounded-r-lg text-white mb-8 backdrop-blur-md max-w-lg">
           <h3 className="font-bold text-xl mb-2 flex items-center gap-2">⚠️ 配置缺失</h3>
-          <p>环境变量 DASHSCOPE_API_KEY 缺失。</p>
+          <p>环境变量 {AI_PROVIDER === 'openrouter' ? 'VITE_OPENROUTER_API_KEY' : 'GEMINI_API_KEY'} 缺失。</p>
         </div>
       ) : (
         <div className="flex flex-col gap-5 w-full max-w-md">
@@ -142,8 +142,8 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
                 <Book size={24} className="text-slate-300 group-hover:text-cyan-300" />
               </div>
               <div>
-                <div className="text-lg font-bold text-slate-200 group-hover:text-white">积木盒子 (Library)</div>
-                <div className="text-xs text-slate-400 font-mono group-hover:text-cyan-200">查看已解锁剧本</div>
+                <div className="text-lg font-bold text-slate-200 group-hover:text-white">剧本库 (Library)</div>
+                <div className="text-xs text-slate-400 font-mono group-hover:text-cyan-200">选择或创建剧本</div>
               </div>
             </div>
           </motion.button>
@@ -179,7 +179,7 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
         transition={{ delay: 1 }}
         className="mt-10 text-slate-500/60 text-xs font-mono tracking-widest uppercase"
       >
-        Powered by {AI_PROVIDER === 'openrouter' ? 'Gemini 2.5 (OpenRouter)' : AI_PROVIDER === 'gemini' ? 'Gemini 2.5' : 'DashScope'} • GALA ENGINE V3.0
+        Powered by {AI_PROVIDER === 'openrouter' ? 'Gemini 2.5 (OpenRouter)' : 'Gemini 2.5'} • GALA ENGINE V3.0
       </motion.div>
     </div>
     

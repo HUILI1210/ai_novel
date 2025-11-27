@@ -1,8 +1,21 @@
+/**
+ * useGameState - 主游戏状态管理 Hook
+ * 
+ * 架构说明：
+ * 此 Hook 目前包含所有游戏逻辑，已拆分出以下独立 Hooks 供未来重构使用：
+ * - useAudioControl: 音频和语音控制
+ * - useAutoPlay: 自动播放功能  
+ * - useDialogueQueue: AI 生成模式的对话队列管理
+ * - useScriptPlayer: 预定义剧本播放控制
+ * 
+ * 重构计划：逐步将此 Hook 的功能迁移到上述子 Hooks，
+ * 最终此文件只负责组合和协调各子 Hook。
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   startNewGame, 
   makeChoice, 
-  generateCharacterImage, 
   generateSpeech, 
   setCustomScript, 
   resetToDefaultScript, 
@@ -12,14 +25,13 @@ import {
   resetBatchHistory,
   cleanBatchDialogueData
 } from '../services/aiService';
-import { GameState, SceneData, ScriptTemplate, DialogueNode, BatchSceneData, CharacterExpression, BackgroundType, BgmMood } from '../types';
+import { GameState, SceneData, ScriptTemplate, DialogueNode, BatchSceneData, CharacterExpression, BackgroundType, BgmMood, GameChoice } from '../types';
 import { audioService } from '../services/audioService';
-import { AFFECTION_MIN, AFFECTION_MAX, AFFECTION_INITIAL } from '../constants/config';
+import { AFFECTION_MIN, AFFECTION_MAX, AFFECTION_INITIAL, AI_PROVIDER } from '../constants/config';
 import { saveRecord, determineEndingType } from '../services/gameRecordService';
 import { DialogueCacheService } from '../services/dialogueCacheService';
 import { 
   loadScript, 
-  hasPreloadedScript, 
   getChapterScenes, 
   getChoiceAffection,
   isEndingChapter,
@@ -49,16 +61,14 @@ export function useGameState() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isVoiceLoading, setIsVoiceLoading] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
-  const [spriteCache, setSpriteCache] = useState<Record<string, string>>({});
-  const [currentSpriteUrl, setCurrentSpriteUrl] = useState<string | null>(null);
-  const [currentScript, setCurrentScript] = useState<ScriptTemplate | null>(null);
+    const [currentScript, setCurrentScript] = useState<ScriptTemplate | null>(null);
   
   // 本地对话队列管理 (替代 StoryBufferService)
   const [dialogueQueue, setDialogueQueue] = useState<DialogueNode[]>([]);
   const [queueIndex, setQueueIndex] = useState(0);
-  const [currentBatchChoices, setCurrentBatchChoices] = useState<{ text: string; sentiment: string }[]>([]);
-  const [currentBatchBackground, setCurrentBatchBackground] = useState<string>('school_rooftop');
-  const [currentBatchBgm, setCurrentBatchBgm] = useState<string>('daily');
+  const [currentBatchChoices, setCurrentBatchChoices] = useState<GameChoice[]>([]);
+  const [currentBatchBackground, setCurrentBatchBackground] = useState<BackgroundType>(BackgroundType.SCHOOL_ROOFTOP);
+  const [currentBatchBgm, setCurrentBatchBgm] = useState<BgmMood>(BgmMood.DAILY);
   
   // 预定义剧本播放状态
   const [isScriptMode, setIsScriptMode] = useState(false);
@@ -69,7 +79,10 @@ export function useGameState() {
   const [scriptScenes, setScriptScenes] = useState<SceneData[]>([]);
 
   // 检查是否有可用的 API Key
-  const hasApiKey = !!(process.env.GEMINI_API_KEY || (process.env.DASHSCOPE_API_KEY && process.env.DASHSCOPE_API_KEY !== 'your-dashscope-api-key'));
+  const hasApiKey = AI_PROVIDER === 'openrouter' 
+    // @ts-ignore - Vite injects env vars via import.meta.env
+    ? !!import.meta.env?.VITE_OPENROUTER_API_KEY
+    : !!process.env.GEMINI_API_KEY;
 
   // Audio Sync Effect
   useEffect(() => {
@@ -105,18 +118,18 @@ export function useGameState() {
   // 辅助函数：将 DialogueNode 转换为 SceneData
   const dialogueNodeToSceneData = useCallback((
     node: DialogueNode, 
-    choices: { text: string; sentiment: string }[],
-    defaultBg: string,
-    defaultBgm: string
+    choices: GameChoice[],
+    defaultBg: BackgroundType,
+    defaultBgm: BgmMood
   ): SceneData => {
     return {
       narrative: node.narrative || '',
       speaker: node.speaker,
       dialogue: node.dialogue,
-      expression: node.expression as CharacterExpression,
-      background: (node.background || defaultBg) as BackgroundType,
-      bgm: (node.bgm || defaultBgm) as BgmMood,
-      choices: choices as any,
+      expression: node.expression,
+      background: node.background || defaultBg,
+      bgm: node.bgm || defaultBgm,
+      choices: choices,
       affectionChange: 0,
       isGameOver: false
     };
@@ -243,86 +256,6 @@ export function useGameState() {
     }
   }, []);
 
-  // 处理剧本模式下的继续/下一句
-  const handleScriptAdvance = useCallback(() => {
-    if (!isScriptMode || !loadedScript) return;
-    
-    const nextIndex = scriptDialogueIndex + 1;
-    
-    // 检查是否还有更多对话
-    if (nextIndex < scriptScenes.length) {
-      const nextScene = scriptScenes[nextIndex] as SceneData & { cgImage?: string; isCG?: boolean };
-      setScriptDialogueIndex(nextIndex);
-      
-      // 更新CG状态
-      if (nextScene.isCG && nextScene.cgImage) {
-        setCurrentCG(nextScene.cgImage);
-      } else {
-        setCurrentCG(null);
-      }
-      
-      // 检查是否是最后一句对话（显示选择）
-      const isLastDialogue = nextIndex === scriptScenes.length - 1;
-      if (isLastDialogue && nextScene.choices && nextScene.choices.length > 0) {
-        setShowChoices(true);
-      }
-      
-      setGameState(prev => ({
-        ...prev,
-        currentScene: nextScene,
-        history: [...prev.history, nextScene],
-        turn: prev.turn + 1,
-      }));
-    }
-  }, [isScriptMode, loadedScript, scriptDialogueIndex, scriptScenes]);
-
-  // 处理剧本模式下的选择
-  const handleScriptChoice = useCallback(async (choiceIndex: number) => {
-    if (!isScriptMode || !loadedScript) return;
-    
-    setShowChoices(false);
-    
-    // 获取好感度变化
-    const affectionChange = getChoiceAffection(loadedScript, currentChapterIndex, choiceIndex);
-    
-    // 检查是否有下一章
-    const nextChapterIndex = currentChapterIndex + 1;
-    
-    if (nextChapterIndex < loadedScript.chapters.length) {
-      // 进入下一章
-      const nextScenes = getChapterScenes(loadedScript, nextChapterIndex, loadedScript.id);
-      
-      setCurrentChapterIndex(nextChapterIndex);
-      setScriptDialogueIndex(0);
-      setScriptScenes(nextScenes);
-      
-      const firstScene = nextScenes[0] as SceneData & { cgImage?: string; isCG?: boolean };
-      if (firstScene.isCG && firstScene.cgImage) {
-        setCurrentCG(firstScene.cgImage);
-      } else {
-        setCurrentCG(null);
-      }
-      
-      setGameState(prev => ({
-        ...prev,
-        currentScene: firstScene,
-        history: [...prev.history, firstScene],
-        affection: Math.min(AFFECTION_MAX, Math.max(AFFECTION_MIN, prev.affection + affectionChange)),
-        turn: prev.turn + 1,
-      }));
-      
-      // 检查是否是结局章节
-      if (isEndingChapter(loadedScript, nextChapterIndex)) {
-        const ending = getEnding(loadedScript, nextChapterIndex);
-        console.log('[Script] 达成结局:', ending?.title);
-      }
-    } else {
-      // 所有章节完成，游戏结束
-      console.log('[Script] 剧本播放完成');
-      // 可以在这里处理结局显示
-    }
-  }, [isScriptMode, loadedScript, currentChapterIndex]);
-
   // 处理玩家选择
   const handleChoice = useCallback(async (choiceText: string) => {
     setShowChoices(false);
@@ -368,6 +301,25 @@ export function useGameState() {
       } else {
         // 所有章节完成，游戏结束
         console.log('[Script] 剧本播放完成');
+        
+        // 创建结局场景
+        const gameOverScene: SceneData = {
+          narrative: '故事在此画上了句点...',
+          speaker: '旁白',
+          dialogue: '感谢您的游玩。',
+          expression: CharacterExpression.NEUTRAL,
+          background: gameState.currentScene?.background || BackgroundType.SCHOOL_ROOFTOP,
+          bgm: BgmMood.ROMANTIC,
+          choices: [],
+          affectionChange: 0,
+          isGameOver: true
+        };
+        
+        setGameState(prev => ({
+          ...prev,
+          currentScene: gameOverScene,
+          history: [...prev.history, gameOverScene],
+        }));
       }
       return;
     }
@@ -422,8 +374,24 @@ export function useGameState() {
       } else {
         // 如果生成的序列为空（可能是直接结局），显示选项或结束
         if (cleanedData.isGameOver) {
-           // TODO: 处理直接GameOver的情况
-           setGameState(prev => ({ ...prev, isLoading: false }));
+          // 直接设置游戏结束场景
+          const gameOverScene: SceneData = {
+            narrative: cleanedData.narrative || '故事结束了...',
+            speaker: '旁白',
+            dialogue: cleanedData.dialogueSequence?.[0]?.dialogue || '感谢您的游玩。',
+            expression: CharacterExpression.NEUTRAL,
+            background: currentBatchBackground as BackgroundType,
+            bgm: BgmMood.SAD,
+            choices: [],
+            affectionChange: cleanedData.affectionChange || 0,
+            isGameOver: true
+          };
+          setGameState(prev => ({
+            ...prev,
+            currentScene: gameOverScene,
+            history: [...prev.history, gameOverScene],
+            isLoading: false
+          }));
         } else {
            setShowChoices(true);
            setGameState(prev => ({ ...prev, isLoading: false }));
@@ -551,7 +519,6 @@ export function useGameState() {
     
     return () => {
       if (timeout) {
-        // console.log('[AutoPlay] Timer cleared');
         clearTimeout(timeout);
       }
     };
@@ -699,15 +666,10 @@ export function useGameState() {
     isMuted,
     isVoiceEnabled,
     isVoiceLoading,
-    currentSpriteUrl,
     currentScript,
     hasApiKey,
     // 自动播放状态
     isAutoPlay,
-    // 缓冲系统状态 (Mocked for compatibility)
-    isPreloading: false,
-    preloadProgress: 0,
-    bufferedChoicesCount: 0,
     // 剧本模式状态
     isScriptMode,
     currentCG,
@@ -729,7 +691,5 @@ export function useGameState() {
     saveGameRecord,
     // 剧本模式方法
     handleStartScriptGame,
-    handleScriptAdvance,
-    handleScriptChoice,
   };
 }

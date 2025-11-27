@@ -4,7 +4,8 @@
  * 通过配置切换
  */
 
-import { SceneData, CharacterExpression, BackgroundType, BgmMood } from "../types";
+import { SceneData, CharacterExpression, BackgroundType, BgmMood, BatchSceneData, DialogueNode } from "../types";
+import { cleanText } from '../utils/textCleaner';
 import {
   AI_PROVIDER,
   AI_TEMPERATURE,
@@ -410,78 +411,6 @@ export const generateCGImage = async (prompt: string): Promise<string | null> =>
 };
 
 // ============ 批量对话生成系统 ============
-import { BatchSceneData, DialogueNode } from '../types';
-
-/**
- * 清理AI生成的文本，修复常见错误
- */
-const cleanAIText = (text: string): string => {
-  if (!text) return '';
-  
-  let cleaned = text;
-  
-  // 第一步：修复特定的漏字问题
-  const preFixPatterns: [RegExp, string][] = [
-    [/樱飞飞/g, '樱花飞'],
-    [/樱飞散/g, '樱花飞散'],
-    [/放后/g, '放学后'],
-    [/回到到校/g, '回到学校'],
-    [/到到校/g, '到学校'],
-    [/谁你担心/g, '谁要你担心'],
-  ];
-  
-  for (const [pattern, replacement] of preFixPatterns) {
-    cleaned = cleaned.replace(pattern, replacement);
-  }
-  
-  // 第二步：修复连续重复的汉字（保留合法的重复）
-  const validReduplicatedChars = [
-    '。', '！', '？', '…', '.', '!', '?', '～', '~',
-    '哈', '呵', '嘿', '嗯', '啊', '呀', '哦', '噢', '呜', '咦',
-    '静', '慢', '悄', '偷', '轻', '默', '渐', '好', '刚', '仅', '常', '往',
-    '天', '年', '月', '日', '时', '分', '秒',
-    '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '百', '千', '万'
-  ];
-  cleaned = cleaned.replace(/(.)\1{1,}/g, (match, char) => {
-    if (validReduplicatedChars.includes(char)) {
-      return match.length > 3 ? char.repeat(3) : match;
-    }
-    return char;
-  });
-  
-  // 第三步：修复重复字清理后的残留问题
-  const postFixPatterns: [RegExp, string][] = [
-    [/樱飞散的/g, '樱花飞散的'],
-    [/樱花散的/g, '樱花飞散的'],
-    [/樱花飞的/g, '樱花飞舞的'],
-    [/樱飞散/g, '樱花飞散'],
-    [/樱飞的/g, '樱花飞舞的'],
-    [/樱飞舞/g, '樱花飞舞'],
-    [/樱飞飞/g, '樱花飞'],
-    [/天台风(?!景)/g, '天台吹风'],
-    [/天台台风/g, '天台吹风'],
-    [/在台吹风/g, '在天台吹风'],
-    [/在台乘凉/g, '在天台乘凉'],
-    [/只好回学校/g, '只好回到学校'],
-    [/只好到学校/g, '只好回到学校'],
-    [/好到学校/g, '好回到学校'],
-    [/回学校/g, '回到学校'],
-    [/回到校/g, '回到学校'],
-    [/回到学取/g, '回到学校取'],
-    [/到校取/g, '到学校取'],
-  ];
-  
-  for (const [pattern, replacement] of postFixPatterns) {
-    cleaned = cleaned.replace(pattern, replacement);
-  }
-  
-  // 修复括号不匹配
-  if (cleaned.includes('）') && !cleaned.includes('（')) {
-    cleaned = '（' + cleaned;
-  }
-  
-  return cleaned.trim();
-};
 
 /**
  * 清理批量对话数据中的所有文本 - 返回全新的深拷贝对象
@@ -490,14 +419,14 @@ export const cleanBatchDialogueData = (data: BatchSceneData): BatchSceneData => 
   // 创建深拷贝以避免修改原始数据
   return {
     ...data,
-    narrative: data.narrative ? cleanAIText(data.narrative) : data.narrative,
+    narrative: data.narrative ? cleanText(data.narrative) : data.narrative,
     dialogueSequence: data.dialogueSequence?.map(node => ({
       ...node,
-      dialogue: cleanAIText(node.dialogue)
+      dialogue: cleanText(node.dialogue)
     })) || [],
     choices: data.choices?.map(choice => ({
       ...choice,
-      text: cleanAIText(choice.text)
+      text: cleanText(choice.text)
     })) || []
   };
 };

@@ -10,7 +10,6 @@ export const TYPING_SOUND_INTERVAL = 5;
 export const AFFECTION_MIN = 0;
 export const AFFECTION_MAX = 100;
 export const AFFECTION_INITIAL = 50;
-export const AFFECTION_GOOD_ENDING_THRESHOLD = 70;
 
 // 音频配置
 export const BGM_VOLUME = 0.4;
@@ -22,7 +21,11 @@ export const SCENE_TRANSITION_DURATION = 800;
 export const FADE_DURATION = 1000;
 
 // ============ AI 提供商选择 ============
-// 'openrouter' = OpenRouter (Gemini) | 'gemini' = Google Gemini
+/**
+ * AI 提供商选择
+ * - 'openrouter': 使用 OpenRouter API（需要 VITE_OPENROUTER_API_KEY 环境变量）
+ * - 'gemini': 直接使用 Google Gemini API（需要 GEMINI_API_KEY 环境变量）
+ */
 export const AI_PROVIDER: 'openrouter' | 'gemini' = 'openrouter';
 
 // ============ OpenRouter 配置 ============

@@ -12,7 +12,6 @@ import { MainMenu } from './components/MainMenu';
 import { GameOverScreen } from './components/GameOverScreen';
 import { PauseMenu } from './components/PauseMenu';
 import { HistoryPanel } from './components/HistoryPanel';
-import { CGScene } from './components/CGScene';
 import { CGOverlay } from './components/CGOverlay';
 import { ScriptLibrary } from './components/ScriptLibrary';
 import { ScriptEditor } from './components/ScriptEditor';
@@ -23,6 +22,7 @@ import { useParallax } from './hooks/useParallax';
 import { workerService } from './services/workerService';
 import { DialogueCacheService } from './services/dialogueCacheService';
 import { getAllScripts } from './services/scriptLibraryService';
+import { getCharacterByScriptId } from './constants/storyAssets';
 import './styles/animations.css';
 
 // 初始化Worker服务
@@ -38,7 +38,6 @@ const App: React.FC = () => {
     isMuted,
     isVoiceEnabled,
     isVoiceLoading,
-    currentSpriteUrl,
     currentScript,
     hasApiKey,
     handleStartGame,
@@ -58,16 +57,15 @@ const App: React.FC = () => {
     // 剧本模式
     isScriptMode,
     currentCG,
+    loadedScript,
     handleStartScriptGame,
   } = useGameState();
 
   // UI States
   const [showScriptLibrary, setShowScriptLibrary] = useState(false);
   const [showScriptEditor, setShowScriptEditor] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showCG, setShowCG] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const hasRecordedRef = useRef(false);
 
   // 初始化对话缓存服务
@@ -227,10 +225,9 @@ const App: React.FC = () => {
       <CharacterSprite 
         expression={gameState.currentScene?.expression || CharacterExpression.NEUTRAL} 
         isVisible={!gameState.isLoading}
-        imageUrl={currentSpriteUrl}
-        characterName={isScriptMode ? '艾琳娜' : (currentScript?.character.name || '雯曦')}
+        characterName={isScriptMode ? getCharacterByScriptId(loadedScript?.id || '') : (currentScript?.character.name || '雯曦')}
         isSpeaking={isScriptMode 
-          ? gameState.currentScene?.speaker === '艾琳娜'
+          ? gameState.currentScene?.speaker === getCharacterByScriptId(loadedScript?.id || '')
           : gameState.currentScene?.speaker === currentScript?.character.name}
         parallaxOffset={parallaxOffset}
       />
@@ -274,13 +271,6 @@ const App: React.FC = () => {
         isVisible={showHistory}
         history={gameState.history}
         onClose={() => setShowHistory(false)}
-      />
-
-      {/* CG Scene */}
-      <CGScene
-        isVisible={showCG}
-        imageUrl={cgImageUrl}
-        onClose={() => setShowCG(false)}
       />
 
       {/* Script Mode CG Overlay */}

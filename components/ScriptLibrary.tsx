@@ -2,7 +2,6 @@ import React, { useState, memo, useEffect, useCallback } from 'react';
 import { ScriptTemplate } from '../types';
 import { getAllScripts, deleteScript, isPresetScript, hasGeneratedPlot, saveGeneratedPlot } from '../services/scriptLibraryService';
 import { getBestEnding, getEndingDescription } from '../services/gameRecordService';
-import { DialogueCacheService } from '../services/dialogueCacheService';
 import { generateFullPlot } from '../services/aiService';
 import { ScriptEditor } from './ScriptEditor';
 
@@ -24,13 +23,6 @@ interface ScriptLibraryProps {
   onCreateNew: () => void;
 }
 
-interface PreloadStatus {
-  scriptId: string;
-  status: string;
-  progress: number;
-  isLoading: boolean;
-}
-
 interface GenerateStatus {
   scriptId: string;
   status: string;
@@ -48,8 +40,6 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
   const [editingScript, setEditingScript] = useState<ScriptTemplate | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [expandedScripts, setExpandedScripts] = useState<Set<string>>(new Set());
-  const [preloadStatus, setPreloadStatus] = useState<PreloadStatus | null>(null);
-  const [cachedScripts, setCachedScripts] = useState<Set<string>>(new Set());
   const [generatedScripts, setGeneratedScripts] = useState<Set<string>>(new Set());
   const [generateStatus, setGenerateStatus] = useState<GenerateStatus | null>(null);
 
@@ -57,19 +47,13 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
     if (isVisible) {
       const allScripts = getAllScripts();
       setScripts(allScripts);
-      // 检查哪些剧本已缓存
-      const cacheService = DialogueCacheService.getInstance();
-      const cached = new Set<string>();
+      // 检查哪些剧本已生成剧情
       const generated = new Set<string>();
       allScripts.forEach(script => {
-        if (cacheService.isScriptFullyCached(script.id)) {
-          cached.add(script.id);
-        }
         if (hasGeneratedPlot(script.id)) {
           generated.add(script.id);
         }
       });
-      setCachedScripts(cached);
       setGeneratedScripts(generated);
     }
   }, [isVisible]);
@@ -137,45 +121,6 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
       }, 3000);
     }
   }, [generateStatus]);
-
-  const handlePreload = useCallback(async (script: ScriptTemplate, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (preloadStatus?.isLoading) {
-      alert('已有预加载任务进行中，请等待完成');
-      return;
-    }
-
-    const cacheService = DialogueCacheService.getInstance();
-    
-    if (cacheService.isScriptFullyCached(script.id)) {
-      alert('该剧本已完全缓存！');
-      return;
-    }
-
-    setPreloadStatus({
-      scriptId: script.id,
-      status: '准备预加载...',
-      progress: 0,
-      isLoading: true
-    });
-
-    const success = await cacheService.preloadScript(script, (status, progress) => {
-      setPreloadStatus(prev => prev ? {
-        ...prev,
-        status,
-        progress
-      } : null);
-    });
-
-    if (success) {
-      setCachedScripts(prev => new Set([...prev, script.id]));
-    }
-
-    setTimeout(() => {
-      setPreloadStatus(null);
-    }, 2000);
-  }, [preloadStatus]);
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -330,31 +275,7 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
                         </button>
                       )}
 
-                      {/* 预加载按钮 */}
-                      {cachedScripts.has(script.id) ? (
-                        <span className="px-2 py-1 text-xs bg-green-600/30 text-green-400 rounded-full">
-                          ✓ 已缓存
-                        </span>
-                      ) : preloadStatus?.scriptId === script.id ? (
-                        <div className="flex items-center gap-2 px-2 py-1 bg-blue-600/30 rounded-full">
-                          <div className="w-16 h-1.5 bg-slate-600 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-400 transition-all duration-300"
-                              style={{ width: `${preloadStatus.progress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-blue-400">{Math.round(preloadStatus.progress)}%</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => handlePreload(script, e)}
-                          className="px-2 py-1 text-xs bg-blue-600/30 text-blue-400 rounded-full hover:bg-blue-600/50 transition-colors"
-                          title="预加载此剧本"
-                        >
-                          ⬇️ 预加载
-                        </button>
-                      )}
-                      <button
+<button
                         onClick={(e) => handleEdit(script, e)}
                         className="p-2 text-slate-500 hover:text-amber-400 transition-colors"
                         title="编辑剧本"

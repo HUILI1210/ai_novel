@@ -83,10 +83,12 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = memo(({
           updates.character = character;
         }
         
-        const updatedScript = updateScript(initialScript.id, updates);
-        if (updatedScript) {
-          onSave(updatedScript);
-        }
+        const updatedScript: ScriptTemplate = {
+          ...initialScript,
+          ...updates,
+        };
+        updateScript(updatedScript);
+        onSave(updatedScript);
       } else {
         // 创建模式：创建新剧本
         const script = createScript(name, character, plotFramework, setting, description);

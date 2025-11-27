@@ -47,7 +47,6 @@ const DEFAULT_CHARACTER = '雯曦';
 interface CharacterSpriteProps {
   expression: CharacterExpression;
   isVisible: boolean;
-  imageUrl?: string | null;
   characterName?: string;
   isSpeaking?: boolean;
   parallaxOffset?: { x: number; y: number };

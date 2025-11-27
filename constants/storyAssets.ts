@@ -44,7 +44,19 @@ export const CHARACTER_TO_SCRIPT: Record<string, string> = {
   '柳如烟': 'preset_courtesan'
 };
 
+// 剧本ID到角色名的映射
+export const SCRIPT_TO_CHARACTER: Record<string, string> = {
+  'preset_tsundere': '雯曦',
+  'preset_princess': '艾琳娜',
+  'preset_courtesan': '柳如烟'
+};
+
 // 根据角色名获取剧本ID
 export const getScriptIdByCharacter = (characterName: string): string => {
   return CHARACTER_TO_SCRIPT[characterName] || 'preset_tsundere';
+};
+
+// 根据剧本ID获取角色名
+export const getCharacterByScriptId = (scriptId: string): string => {
+  return SCRIPT_TO_CHARACTER[scriptId] || '雯曦';
 };

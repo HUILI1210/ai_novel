@@ -18,7 +18,7 @@ export { GameOverScreen } from './GameOverScreen';
 // New Feature Components
 export { PauseMenu } from './PauseMenu';
 export { HistoryPanel } from './HistoryPanel';
-export { CGScene } from './CGScene';
+export { CGOverlay } from './CGOverlay';
 export { ScriptLibrary } from './ScriptLibrary';
 export { ScriptEditor } from './ScriptEditor';
 export { SakuraEffect } from './SakuraEffect';
