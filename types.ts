@@ -57,6 +57,9 @@ export interface SceneData {
   choices: GameChoice[];
   affectionChange: number; // How much the previous choice affected the relationship
   isGameOver: boolean;
+  // 历史回跳用
+  historyChapterIndex?: number;  // 章节索引
+  historyDialogueIndex?: number; // 对话索引
 }
 
 export interface GameState {

@@ -447,10 +447,17 @@ export function useGameState() {
           }
         }
         
+        // 添加历史索引用于回跳
+        const historyScene = {
+          ...nextScene,
+          historyChapterIndex: currentChapterIndex,
+          historyDialogueIndex: nextIndex,
+        };
+        
         setGameState(prev => ({
           ...prev,
           currentScene: nextScene,
-          history: [...prev.history, nextScene],
+          history: [...prev.history, historyScene],
           turn: prev.turn + 1,
         }));
       }
@@ -675,6 +682,164 @@ export function useGameState() {
     return generatePlotFramework(prompt);
   }, []);
 
+  // 从存档加载游戏
+  const loadFromSave = useCallback(async (saveData: {
+    scriptId: string;
+    chapterIndex: number;
+    dialogueIndex: number;
+    affection: number;
+    turnsPlayed: number;
+    currentExpression: CharacterExpression;
+    currentBackground: BackgroundType;
+    currentBgm: BgmMood;
+  }) => {
+    try {
+      setGameState(prev => ({ ...prev, isLoading: true }));
+      
+      // 加载剧本
+      const script = await loadScript(saveData.scriptId);
+      if (!script) {
+        throw new Error('无法加载剧本');
+      }
+
+      setLoadedScript(script);
+      setIsScriptMode(true);
+      setCurrentChapterIndex(saveData.chapterIndex);
+      setScriptDialogueIndex(saveData.dialogueIndex);
+
+      // 获取当前章节的场景
+      const scenes = getChapterScenes(script, saveData.chapterIndex, saveData.scriptId);
+      setScriptScenes(scenes);
+
+      // 设置当前场景
+      const currentScene = scenes[saveData.dialogueIndex];
+      if (currentScene) {
+        // 检查是否有CG
+        const extendedScene = currentScene as SceneData & { cgImage?: string; isCG?: boolean };
+        if (extendedScene.isCG && extendedScene.cgImage) {
+          setCurrentCG(extendedScene.cgImage);
+        } else {
+          setCurrentCG(null);
+        }
+
+        setGameState(prev => ({
+          ...prev,
+          currentScene: {
+            ...currentScene,
+            expression: saveData.currentExpression,
+            background: saveData.currentBackground,
+            bgm: saveData.currentBgm,
+          },
+          affection: saveData.affection,
+          turn: saveData.turnsPlayed,
+          gameStarted: true,
+          isLoading: false,
+        }));
+      }
+
+      // 播放BGM
+      audioService.playBgm(saveData.currentBgm);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载存档失败');
+      setGameState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  // 获取当前游戏状态用于保存
+  const getCurrentSaveState = useCallback(() => {
+    if (!isScriptMode || !loadedScript) return null;
+    
+    // 根据剧本ID获取角色名
+    const getCharacterName = () => {
+      if (loadedScript.id === 'preset_princess' || loadedScript.title?.includes('艾琳娜') || loadedScript.title?.includes('蔷薇')) return '艾琳娜';
+      if (loadedScript.id === 'preset_tsundere' || loadedScript.title?.includes('雯曦')) return '雯曦';
+      return '未知';
+    };
+    
+    return {
+      chapterIndex: currentChapterIndex,
+      dialogueIndex: scriptDialogueIndex,
+      affection: gameState.affection,
+      turnsPlayed: gameState.turn,
+      characterName: getCharacterName(),
+      currentExpression: gameState.currentScene?.expression || CharacterExpression.NEUTRAL,
+      currentBackground: gameState.currentScene?.background || BackgroundType.PALACE_GARDEN,
+      currentBgm: gameState.currentScene?.bgm || BgmMood.DAILY,
+      currentDialogue: gameState.currentScene?.dialogue || gameState.currentScene?.narrative || '',
+    };
+  }, [isScriptMode, loadedScript, currentChapterIndex, scriptDialogueIndex, gameState]);
+
+  // 获取当前剧本ID
+  const getCurrentScriptId = useCallback(() => {
+    if (isScriptMode && loadedScript) {
+      // 直接使用loadedScript的id
+      return loadedScript.id || 'preset_princess';
+    }
+    return currentScript?.id || '';
+  }, [isScriptMode, loadedScript, currentScript]);
+
+  // 获取当前剧本标题
+  const getCurrentScriptTitle = useCallback(() => {
+    if (isScriptMode && loadedScript) {
+      return loadedScript.title || '未知剧本';
+    }
+    return currentScript?.name || '未知剧本';
+  }, [isScriptMode, loadedScript, currentScript]);
+
+  // 回跳到历史对话
+  const jumpToHistory = useCallback((historyIndex: number) => {
+    if (!isScriptMode || !loadedScript) return;
+    
+    const targetScene = gameState.history[historyIndex];
+    if (!targetScene || targetScene.historyChapterIndex === undefined || targetScene.historyDialogueIndex === undefined) {
+      console.warn('[History] 无法回跳：缺少历史索引');
+      return;
+    }
+
+    const chapterIndex = targetScene.historyChapterIndex;
+    const dialogueIndex = targetScene.historyDialogueIndex;
+
+    // 重置选择状态
+    setShowChoices(false);
+
+    // 更新章节和对话索引
+    setCurrentChapterIndex(chapterIndex);
+    setScriptDialogueIndex(dialogueIndex);
+
+    // 获取该章节的场景
+    const scriptId = getCurrentScriptId();
+    const scenes = getChapterScenes(loadedScript, chapterIndex, scriptId);
+    setScriptScenes(scenes);
+
+    // 截断历史到回跳点
+    const truncatedHistory = gameState.history.slice(0, historyIndex + 1);
+
+    // 更新当前场景
+    const currentScene = scenes[dialogueIndex];
+    if (currentScene) {
+      const extendedScene = currentScene as SceneData & { cgImage?: string; isCG?: boolean };
+      if (extendedScene.isCG && extendedScene.cgImage) {
+        setCurrentCG(extendedScene.cgImage);
+      } else {
+        setCurrentCG(null);
+      }
+
+      setGameState(prev => ({
+        ...prev,
+        currentScene,
+        history: truncatedHistory,
+        turn: historyIndex + 1,
+      }));
+
+      // 播放BGM
+      if (currentScene.bgm) {
+        audioService.playBgm(currentScene.bgm);
+      }
+    }
+
+    console.log(`[History] 回跳到章节 ${chapterIndex + 1}, 对话 ${dialogueIndex + 1}`);
+  }, [isScriptMode, loadedScript, gameState.history, getCurrentScriptId]);
+
   return {
     gameState,
     showChoices,
@@ -710,5 +875,13 @@ export function useGameState() {
     saveGameRecord,
     // 剧本模式方法
     handleStartScriptGame,
+    // 存档相关
+    loadFromSave,
+    getCurrentSaveState,
+    getCurrentScriptId,
+    getCurrentScriptTitle,
+    scriptDialogueIndex,
+    // 历史回跳
+    jumpToHistory,
   };
 }

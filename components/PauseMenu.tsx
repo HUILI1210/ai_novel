@@ -7,6 +7,10 @@ interface PauseMenuProps {
   onResume: () => void;
   onReturnToTitle: () => void;
   onOpacityChange: (opacity: number) => void;
+  onSave?: () => void;
+  onLoad?: () => void;
+  onQuickSaveAndExit?: () => void;
+  canSave?: boolean;
 }
 
 export const PauseMenu: React.FC<PauseMenuProps> = memo(({
@@ -14,7 +18,11 @@ export const PauseMenu: React.FC<PauseMenuProps> = memo(({
   dialogueOpacity,
   onResume,
   onReturnToTitle,
-  onOpacityChange
+  onOpacityChange,
+  onSave,
+  onLoad,
+  onQuickSaveAndExit,
+  canSave = true
 }) => {
   if (!isVisible) return null;
 
@@ -55,6 +63,40 @@ export const PauseMenu: React.FC<PauseMenuProps> = memo(({
           >
             ▶️ 继续游戏
           </button>
+
+          {/* 存档/读档按钮 */}
+          <div className="flex gap-3">
+            {onSave && (
+              <button
+                onClick={onSave}
+                disabled={!canSave}
+                className={`flex-1 py-3 rounded-xl font-bold text-lg transition-opacity flex items-center justify-center gap-2
+                  ${canSave 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90' 
+                    : 'bg-slate-700 text-slate-400 cursor-not-allowed'}`}
+              >
+                💾 保存
+              </button>
+            )}
+            {onLoad && (
+              <button
+                onClick={onLoad}
+                className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              >
+                📂 读档
+              </button>
+            )}
+          </div>
+          
+          {/* 快速存档退出 */}
+          {onQuickSaveAndExit && canSave && (
+            <button
+              onClick={onQuickSaveAndExit}
+              className="w-full py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            >
+              💾 存档并退出
+            </button>
+          )}
           
           <button
             onClick={onReturnToTitle}

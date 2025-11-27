@@ -15,7 +15,10 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
     [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
     [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'
+    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.CONFUSION]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.SERIOUS]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
+    [CharacterExpression.VERY_HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'
   },
   // 艾琳娜 - 白金蔷薇公主 (stories/02_princess_elena/expressions/)
   '艾琳娜': {
@@ -26,7 +29,10 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.BLUSH]: '/stories/02_princess_elena/expressions/blushing.png',
     [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.png',
     [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.png',
-    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.png'
+    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.png',
+    [CharacterExpression.CONFUSION]: '/stories/02_princess_elena/expressions/confusion.png',
+    [CharacterExpression.SERIOUS]: '/stories/02_princess_elena/expressions/serious.png',
+    [CharacterExpression.VERY_HAPPY]: '/stories/02_princess_elena/expressions/very_happy.png'
   },
   // 柳如烟 - 古风花魁 (暂用雯曦图片作为占位)
   '柳如烟': {
@@ -37,7 +43,10 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
     [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
     [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'
+    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.CONFUSION]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.SERIOUS]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
+    [CharacterExpression.VERY_HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'
   }
 };
 
@@ -92,24 +101,24 @@ export const CharacterSprite: React.FC<CharacterSpriteProps> = memo(({
       className={`absolute bottom-0 left-1/2 transition-all duration-500 z-10 flex justify-center items-end pointer-events-none
         ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       style={{ 
-        height: '75vh',  // 显示区域高度
-        width: '100%', 
-        maxWidth: '60vh',
+        height: '95vh',  // 占满大部分屏幕高度
+        width: '80%',    // 增加宽度
+        maxWidth: '90vh',
         transform: `translateX(-50%) translate(${parallaxOffset.x * 0.3}px, ${parallaxOffset.y * 0.2}px)`,
-        overflow: 'hidden'  // 裁剪超出部分
       }}
     >
-      {/* 角色图片容器 - 显示2/3身体 */}
-      <div className={`relative w-full flex items-start justify-center transition-transform duration-300 ${isSpeaking ? 'scale-[1.02]' : 'scale-100'}`}
-        style={{ height: '115%' }}  // 图片实际高度比容器大，底部被裁剪
+      {/* 角色图片容器 */}
+      <div className={`relative w-full flex items-end justify-center transition-transform duration-300 ${isSpeaking ? 'scale-[1.02]' : 'scale-100'}`}
+        style={{ height: '100%' }}
       >
-        {/* 主角色图片 - 直接切换，无滤镜 */}
+        {/* 主角色图片 - 放大显示 */}
         <img 
           src={currentImage} 
           alt={`${characterName} - ${expression}`}
-          className={`h-full w-auto max-w-none object-cover object-top transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`h-full w-auto object-contain transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           style={{ 
-            filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.5))'
+            filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.5))',
+            maxWidth: 'none'  // 移除宽度限制
           }}
           onLoad={() => setImageLoaded(true)}
         />

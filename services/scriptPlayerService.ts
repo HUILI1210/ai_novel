@@ -175,6 +175,7 @@ export const dialogueToSceneData = (
 
 /**
  * 获取章节的所有对话转换为场景数据
+ * 保持角色表情连续性：旁白/我 说话时保留上一个角色的表情
  */
 export const getChapterScenes = (
   script: FullScript,
@@ -183,6 +184,9 @@ export const getChapterScenes = (
 ): SceneData[] => {
   const chapter = script.chapters[chapterIndex];
   if (!chapter) return [];
+
+  // 追踪上一个角色的表情，用于旁白时保持表情
+  let lastCharacterExpression: CharacterExpression = CharacterExpression.NEUTRAL;
 
   return chapter.dialogues.map((dialogue, index) => {
     // 只有最后一个对话才显示选择
@@ -194,7 +198,22 @@ export const getChapterScenes = (
         }))
       : [];
 
-    return dialogueToSceneData(dialogue, chapter, scriptId, choices);
+    const sceneData = dialogueToSceneData(dialogue, chapter, scriptId, choices);
+    
+    // 判断是否为角色对话（非旁白、非"我"、非CG）
+    const isCharacterDialogue = dialogue.speaker !== '旁白' && 
+                                 dialogue.speaker !== '我' && 
+                                 dialogue.type !== 'cg';
+    
+    if (isCharacterDialogue) {
+      // 角色说话时，更新表情记录
+      lastCharacterExpression = sceneData.expression;
+    } else {
+      // 旁白/"我"/CG时，保持上一个角色的表情
+      sceneData.expression = lastCharacterExpression;
+    }
+    
+    return sceneData;
   });
 };
 

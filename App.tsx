@@ -18,12 +18,14 @@ import { ScriptLibrary } from './components/ScriptLibrary';
 import { ScriptEditor } from './components/ScriptEditor';
 import { WeatherEffect, WeatherType } from './components/WeatherEffect';
 import { SettingsModal } from './components/SettingsModal';
+import { SaveLoadModal } from './components/SaveLoadModal';
 import { useGameState } from './hooks/useGameState';
 import { useParallax } from './hooks/useParallax';
 import { workerService } from './services/workerService';
 import { DialogueCacheService } from './services/dialogueCacheService';
 import { getAllScripts } from './services/scriptLibraryService';
 import { getCharacterByScriptId } from './constants/storyAssets';
+import { saveGame, SaveData } from './services/saveService';
 import './styles/animations.css';
 
 // 初始化Worker服务
@@ -61,6 +63,15 @@ const App: React.FC = () => {
     loadedScript,
     scriptEnding,
     handleStartScriptGame,
+    // 存档相关
+    loadFromSave,
+    getCurrentSaveState,
+    getCurrentScriptId,
+    getCurrentScriptTitle,
+    currentChapterIndex,
+    scriptDialogueIndex,
+    // 历史回跳
+    jumpToHistory,
   } = useGameState();
 
   // UI States
@@ -68,7 +79,56 @@ const App: React.FC = () => {
   const [showScriptEditor, setShowScriptEditor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
   const hasRecordedRef = useRef(false);
+
+  // 存档处理
+  const handleOpenSave = () => {
+    setShowSaveModal(true);
+    if (gameState.isPaused) togglePause();
+  };
+
+  const handleOpenLoad = () => {
+    setShowLoadModal(true);
+    if (gameState.isPaused) togglePause();
+  };
+
+  const handleLoadSave = (saveData: SaveData) => {
+    setShowLoadModal(false);
+    loadFromSave(saveData);
+  };
+
+  const handleContinueGame = (saveData: SaveData) => {
+    loadFromSave(saveData);
+  };
+
+  // 快速存档并退出
+  const handleQuickSaveAndExit = () => {
+    const saveState = getCurrentSaveState();
+    if (saveState && isScriptMode) {
+      const scriptId = getCurrentScriptId();
+      const scriptTitle = getCurrentScriptTitle();
+      
+      // 保存到槽位 0 (第一个槽位)
+      saveGame(scriptId, 0, {
+        scriptId,
+        scriptTitle,
+        chapterIndex: saveState.chapterIndex,
+        dialogueIndex: saveState.dialogueIndex,
+        affection: saveState.affection,
+        turnsPlayed: saveState.turnsPlayed,
+        characterName: saveState.characterName,
+        currentExpression: saveState.currentExpression,
+        currentBackground: saveState.currentBackground,
+        currentBgm: saveState.currentBgm,
+        previewText: saveState.currentDialogue.substring(0, 50) + 
+                     (saveState.currentDialogue.length > 50 ? '...' : ''),
+      });
+    }
+    // 返回标题
+    returnToTitle();
+  };
 
   // 初始化对话缓存服务
   useEffect(() => {
@@ -119,6 +179,49 @@ const App: React.FC = () => {
     }
   }, [gameState.currentScene?.isGameOver, gameState.gameStarted, saveGameRecord]);
 
+  // 全局键盘事件监听 (ESC暂停, 空格跳过)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 游戏未开始时不处理
+      if (!gameState.gameStarted) return;
+      
+      // 如果正在输入框中，不处理
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      // ESC 唤起/关闭暂停菜单
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        // 关闭所有弹窗
+        if (showSaveModal) {
+          setShowSaveModal(false);
+        } else if (showLoadModal) {
+          setShowLoadModal(false);
+        } else if (showHistory) {
+          setShowHistory(false);
+        } else {
+          togglePause();
+        }
+        return;
+      }
+
+      // 空格键跳过对话/CG
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        // 暂停时不处理
+        if (gameState.isPaused) return;
+        // 选择菜单显示时不处理
+        if (showChoices) return;
+        // 加载中不处理
+        if (gameState.isLoading) return;
+        
+        handleNextDialogue();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.gameStarted, gameState.isPaused, gameState.isLoading, showChoices, showSaveModal, showLoadModal, showHistory, togglePause, handleNextDialogue]);
+
   // 处理剧本选择
   const handleSelectScript = (script: ScriptTemplate) => {
     setShowScriptLibrary(false);
@@ -146,10 +249,11 @@ const App: React.FC = () => {
           hasApiKey={hasApiKey}
           isLoading={gameState.isLoading}
           error={error}
-          onStart={handleStartGame}
+          onStart={() => setShowLoadModal(true)}
           onErrorClose={clearError}
           onOpenScriptLibrary={() => setShowScriptLibrary(true)}
           onOpenSettings={() => setShowSettings(true)}
+          onContinueGame={handleContinueGame}
         />
         <ScriptLibrary
           isVisible={showScriptLibrary}
@@ -178,6 +282,15 @@ const App: React.FC = () => {
           onClose={() => setShowSettings(false)}
           onOpacityChange={setDialogueOpacity}
           onToggleMute={handleToggleMute}
+        />
+        {/* 读档弹窗（主菜单） */}
+        <SaveLoadModal
+          isOpen={showLoadModal}
+          onClose={() => setShowLoadModal(false)}
+          mode="load"
+          scriptId="preset_princess"
+          scriptTitle="选择存档"
+          onLoad={handleLoadSave}
         />
       </>
     );
@@ -296,6 +409,10 @@ const App: React.FC = () => {
         onResume={togglePause}
         onReturnToTitle={returnToTitle}
         onOpacityChange={setDialogueOpacity}
+        onSave={isScriptMode ? handleOpenSave : undefined}
+        onLoad={handleOpenLoad}
+        onQuickSaveAndExit={isScriptMode ? handleQuickSaveAndExit : undefined}
+        canSave={isScriptMode}
       />
 
       {/* History Panel */}
@@ -303,6 +420,28 @@ const App: React.FC = () => {
         isVisible={showHistory}
         history={gameState.history}
         onClose={() => setShowHistory(false)}
+        onJumpToHistory={jumpToHistory}
+        canJump={isScriptMode}
+      />
+
+      {/* 存档弹窗 */}
+      <SaveLoadModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        mode="save"
+        scriptId={getCurrentScriptId()}
+        scriptTitle={getCurrentScriptTitle()}
+        currentState={getCurrentSaveState() || undefined}
+      />
+
+      {/* 读档弹窗（游戏内） */}
+      <SaveLoadModal
+        isOpen={showLoadModal}
+        onClose={() => setShowLoadModal(false)}
+        mode="load"
+        scriptId={getCurrentScriptId()}
+        scriptTitle={getCurrentScriptTitle()}
+        onLoad={handleLoadSave}
       />
 
     </div>

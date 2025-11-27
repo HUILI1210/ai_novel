@@ -1,10 +1,11 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Book, Settings, Sparkles } from 'lucide-react';
+import { Play, Book, Settings, Sparkles, FolderOpen } from 'lucide-react';
 import { LoadingOverlay } from './LoadingOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
 import { SakuraEffect } from './SakuraEffect';
 import { AI_PROVIDER } from '../constants/config';
+import { hasAnySave, getLatestSave, SaveData } from '../services/saveService';
 
 // 女主角立绘URL (使用本地透明背景图片)
 const HEROINE_IMAGE = '/stories/02_princess_elena/expressions/elena_base.png';
@@ -17,6 +18,7 @@ interface MainMenuProps {
   onErrorClose: () => void;
   onOpenScriptLibrary: () => void;
   onOpenSettings: () => void;
+  onContinueGame?: (saveData: SaveData) => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = memo(({
@@ -26,8 +28,24 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
   onStart,
   onErrorClose,
   onOpenScriptLibrary,
-  onOpenSettings
-}) => (
+  onOpenSettings,
+  onContinueGame
+}) => {
+  const [hasSaves, setHasSaves] = useState(false);
+  const [latestSave, setLatestSave] = useState<SaveData | null>(null);
+
+  useEffect(() => {
+    setHasSaves(hasAnySave());
+    setLatestSave(getLatestSave());
+  }, []);
+
+  const handleContinue = () => {
+    if (latestSave && onContinueGame) {
+      onContinueGame(latestSave);
+    }
+  };
+
+  return (
   <div className="relative w-full h-screen flex items-center overflow-hidden font-sans bg-[#0f172a]">
     {/* 1. 背景层 - 保持简洁，使用深色渐变或原有图片 */}
     <div className="absolute inset-0 z-0 overflow-hidden">
@@ -100,14 +118,14 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
         </div>
       ) : (
         <div className="flex flex-col gap-5 w-full max-w-md">
-          {/* 开始按钮 */}
+          {/* 选择剧本按钮 - 主按钮 */}
           <motion.button
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
             whileHover={{ scale: 1.02, x: 10 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onStart}
+            onClick={onOpenScriptLibrary}
             disabled={isLoading}
             className="group relative w-full py-4 px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-left rounded-xl shadow-lg border border-white/10 overflow-hidden"
           >
@@ -115,35 +133,70 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-white/20 rounded-full">
-                  {isLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Play size={24} fill="currentColor" />}
+                  {isLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Book size={24} />}
                 </div>
                 <div>
-                  <div className="text-xl font-bold">开始堆砌 (Start)</div>
-                  <div className="text-xs text-pink-100 font-mono opacity-80">启动新的故事线</div>
+                  <div className="text-xl font-bold">选择剧本 (Select)</div>
+                  <div className="text-xs text-pink-100 font-mono opacity-80">开启新的冒险</div>
                 </div>
               </div>
               <div className="text-2xl opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">→</div>
             </div>
           </motion.button>
 
-          {/* 剧本库按钮 */}
+          {/* 继续游戏按钮 - 有存档时显示 */}
+          {hasSaves && latestSave && (
+            <motion.button
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              whileHover={{ scale: 1.02, x: 10 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleContinue}
+              disabled={isLoading}
+              className="group relative w-full py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-left rounded-xl shadow-lg border border-white/10 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-white/20 rounded-full">
+                    <Play size={24} fill="currentColor" />
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold">继续游戏 (Continue)</div>
+                    <div className="text-xs text-emerald-100 font-mono opacity-80">
+                      {latestSave.scriptTitle} · 第{latestSave.chapterIndex + 1}章
+                    </div>
+                  </div>
+                </div>
+                <div className="text-2xl opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">→</div>
+              </div>
+            </motion.button>
+          )}
+
+          {/* 读取存档按钮 */}
           <motion.button
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: hasSaves ? 0.6 : 0.5 }}
             whileHover={{ scale: 1.02, x: 10 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onOpenScriptLibrary}
-            disabled={isLoading}
-            className="group relative w-full py-4 px-6 bg-slate-800/60 hover:bg-slate-700/80 backdrop-blur-md text-white text-left rounded-xl shadow-lg border border-white/10 hover:border-cyan-400/50 overflow-hidden transition-colors"
+            onClick={onStart}
+            disabled={isLoading || !hasSaves}
+            className={`group relative w-full py-4 px-6 backdrop-blur-md text-white text-left rounded-xl shadow-lg border overflow-hidden transition-colors
+              ${hasSaves 
+                ? 'bg-slate-800/60 hover:bg-slate-700/80 border-white/10 hover:border-cyan-400/50' 
+                : 'bg-slate-800/30 border-slate-700/30 cursor-not-allowed opacity-50'}`}
           >
             <div className="flex items-center gap-4 relative z-10">
               <div className="p-2 bg-slate-700/50 rounded-full group-hover:bg-cyan-900/50 transition-colors">
-                <Book size={24} className="text-slate-300 group-hover:text-cyan-300" />
+                <FolderOpen size={24} className="text-slate-300 group-hover:text-cyan-300" />
               </div>
               <div>
-                <div className="text-lg font-bold text-slate-200 group-hover:text-white">剧本库 (Library)</div>
-                <div className="text-xs text-slate-400 font-mono group-hover:text-cyan-200">选择或创建剧本</div>
+                <div className="text-lg font-bold text-slate-200 group-hover:text-white">读取存档 (Load)</div>
+                <div className="text-xs text-slate-400 font-mono group-hover:text-cyan-200">
+                  {hasSaves ? '选择存档继续' : '暂无存档'}
+                </div>
               </div>
             </div>
           </motion.button>
@@ -196,6 +249,7 @@ export const MainMenu: React.FC<MainMenuProps> = memo(({
       }
     `}</style>
   </div>
-));
+  );
+});
 
 MainMenu.displayName = 'MainMenu';
