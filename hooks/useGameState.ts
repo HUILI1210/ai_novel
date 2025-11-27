@@ -77,6 +77,7 @@ export function useGameState() {
   const [scriptDialogueIndex, setScriptDialogueIndex] = useState(0);
   const [currentCG, setCurrentCG] = useState<string | null>(null);
   const [scriptScenes, setScriptScenes] = useState<SceneData[]>([]);
+  const [scriptEnding, setScriptEnding] = useState<{ type: string; title: string; description: string } | null>(null);
 
   // 检查是否有可用的 API Key
   const hasApiKey = AI_PROVIDER === 'openrouter' 
@@ -292,33 +293,28 @@ export function useGameState() {
           affection: Math.min(AFFECTION_MAX, Math.max(AFFECTION_MIN, prev.affection + affectionChange)),
           turn: prev.turn + 1,
         }));
-        
-        // 检查是否是结局章节
-        if (isEndingChapter(loadedScript, nextChapterIndex)) {
-          const ending = getEnding(loadedScript, nextChapterIndex);
-          console.log('[Script] 达成结局:', ending?.title);
-        }
       } else {
-        // 所有章节完成，游戏结束
+        // 所有章节完成，检查结局
         console.log('[Script] 剧本播放完成');
         
-        // 创建结局场景
-        const gameOverScene: SceneData = {
-          narrative: '故事在此画上了句点...',
-          speaker: '旁白',
-          dialogue: '感谢您的游玩。',
-          expression: CharacterExpression.NEUTRAL,
-          background: gameState.currentScene?.background || BackgroundType.SCHOOL_ROOFTOP,
-          bgm: BgmMood.ROMANTIC,
-          choices: [],
-          affectionChange: 0,
-          isGameOver: true
-        };
+        // 获取最后一章的结局信息
+        const ending = getEnding(loadedScript, currentChapterIndex);
+        if (ending) {
+          console.log('[Script] 达成结局:', ending.title);
+          setScriptEnding(ending);
+        } else {
+          // 如果没有定义结局，使用默认结局
+          setScriptEnding({
+            type: 'normal_end',
+            title: '故事完结',
+            description: '感谢您的游玩。'
+          });
+        }
         
+        // 更新好感度
         setGameState(prev => ({
           ...prev,
-          currentScene: gameOverScene,
-          history: [...prev.history, gameOverScene],
+          affection: Math.min(AFFECTION_MAX, Math.max(AFFECTION_MIN, prev.affection + affectionChange)),
         }));
       }
       return;
@@ -431,10 +427,24 @@ export function useGameState() {
           setCurrentCG(null);
         }
         
-        // 检查是否是最后一句对话（显示选择）
+        // 检查是否是最后一句对话
         const isLastDialogue = nextIndex === scriptScenes.length - 1;
-        if (isLastDialogue && nextScene.choices && nextScene.choices.length > 0) {
+        const hasChoices = nextScene.choices && nextScene.choices.length > 0;
+        
+        if (isLastDialogue && hasChoices) {
+          // 有选项，显示选择
           setShowChoices(true);
+        } else if (isLastDialogue && !hasChoices) {
+          // 无选项，检查是否是最后一章
+          const isLastChapter = currentChapterIndex === loadedScript.chapters.length - 1;
+          if (isLastChapter) {
+            // 最后一章的最后一句，触发结局
+            const ending = getEnding(loadedScript, currentChapterIndex);
+            if (ending) {
+              console.log('[Script] 达成结局:', ending.title);
+              setScriptEnding(ending);
+            }
+          }
         }
         
         setGameState(prev => ({
@@ -560,6 +570,14 @@ export function useGameState() {
     setGameState(INITIAL_STATE);
     setShowChoices(false);
     setError(null);
+    // 重置剧本模式状态
+    setIsScriptMode(false);
+    setLoadedScript(null);
+    setCurrentChapterIndex(0);
+    setScriptDialogueIndex(0);
+    setCurrentCG(null);
+    setScriptScenes([]);
+    setScriptEnding(null);
   }, []);
 
   // 使用自定义剧本开始游戏
@@ -675,6 +693,7 @@ export function useGameState() {
     currentCG,
     currentChapterIndex,
     loadedScript,
+    scriptEnding,
     // 方法
     handleStartGame,
     handleChoice,

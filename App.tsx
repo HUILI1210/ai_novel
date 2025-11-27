@@ -12,7 +12,8 @@ import { MainMenu } from './components/MainMenu';
 import { GameOverScreen } from './components/GameOverScreen';
 import { PauseMenu } from './components/PauseMenu';
 import { HistoryPanel } from './components/HistoryPanel';
-import { CGOverlay } from './components/CGOverlay';
+// CGOverlay 已被移除，CG现在通过Background组件显示
+import { ScriptEndingScreen } from './components/ScriptEndingScreen';
 import { ScriptLibrary } from './components/ScriptLibrary';
 import { ScriptEditor } from './components/ScriptEditor';
 import { WeatherEffect, WeatherType } from './components/WeatherEffect';
@@ -58,6 +59,7 @@ const App: React.FC = () => {
     isScriptMode,
     currentCG,
     loadedScript,
+    scriptEnding,
     handleStartScriptGame,
   } = useGameState();
 
@@ -181,7 +183,21 @@ const App: React.FC = () => {
     );
   }
 
-  // Game Over Screen
+  // Script Ending Screen - 剧本模式结局
+  if (scriptEnding && isScriptMode) {
+    return (
+      <ScriptEndingScreen
+        ending={scriptEnding}
+        affection={gameState.affection}
+        turnsPlayed={gameState.turn}
+        characterName={getCharacterByScriptId(loadedScript?.id || '')}
+        scriptTitle={loadedScript?.title || '未知剧本'}
+        onReturnToTitle={returnToTitle}
+      />
+    );
+  }
+
+  // Game Over Screen - AI生成模式结局
   if (gameState.currentScene?.isGameOver) {
     return (
       <GameOverScreen 
@@ -206,10 +222,11 @@ const App: React.FC = () => {
         onOpenHistory={() => setShowHistory(true)}
       />
       
-      {/* Visual Layer */}
+      {/* Visual Layer - CG模式下使用CG替换背景 */}
       <Background 
         type={gameState.currentScene?.background || BackgroundType.SCHOOL_ROOFTOP} 
         parallaxOffset={parallaxOffset}
+        cgImage={currentCG && isScriptMode ? currentCG : undefined}
       />
       
       {/* Transitions */}
@@ -221,10 +238,10 @@ const App: React.FC = () => {
       {/* Weather Effects */}
       <WeatherEffect type={getWeatherType()} intensity={0.4} />
       
-      {/* Character Layer */}
+      {/* Character Layer - CG模式下隐藏 */}
       <CharacterSprite 
         expression={gameState.currentScene?.expression || CharacterExpression.NEUTRAL} 
-        isVisible={!gameState.isLoading}
+        isVisible={!gameState.isLoading && !(currentCG && isScriptMode)}
         characterName={isScriptMode ? getCharacterByScriptId(loadedScript?.id || '') : (currentScript?.character.name || '雯曦')}
         isSpeaking={isScriptMode 
           ? gameState.currentScene?.speaker === getCharacterByScriptId(loadedScript?.id || '')
@@ -232,20 +249,35 @@ const App: React.FC = () => {
         parallaxOffset={parallaxOffset}
       />
 
-      {/* UI Layer */}
-      <DialogueBox 
-        speaker={gameState.currentScene?.speaker || "???"}
-        text={gameState.currentScene?.dialogue || gameState.currentScene?.narrative || "..."}
-        onNext={handleNextDialogue}
-        isTyping={isTyping}
-        setIsTyping={setIsTyping}
-        isVoiceEnabled={isVoiceEnabled}
-        toggleVoice={toggleVoice}
-        isVoiceLoading={isVoiceLoading}
-        opacity={gameState.dialogueOpacity}
-        isAutoPlay={isAutoPlay}
-        toggleAutoPlay={toggleAutoPlay}
-      />
+      {/* UI Layer - CG模式下隐藏对话框 */}
+      {!(currentCG && isScriptMode) && (
+        <DialogueBox 
+          speaker={gameState.currentScene?.speaker || "???"}
+          text={gameState.currentScene?.dialogue || gameState.currentScene?.narrative || "..."}
+          onNext={handleNextDialogue}
+          isTyping={isTyping}
+          setIsTyping={setIsTyping}
+          isVoiceEnabled={isVoiceEnabled}
+          toggleVoice={toggleVoice}
+          isVoiceLoading={isVoiceLoading}
+          opacity={gameState.dialogueOpacity}
+          isAutoPlay={isAutoPlay}
+          toggleAutoPlay={toggleAutoPlay}
+        />
+      )}
+      
+      {/* CG模式下的点击区域 */}
+      {currentCG && isScriptMode && (
+        <div 
+          className="absolute inset-0 z-20 cursor-pointer"
+          onClick={handleNextDialogue}
+        >
+          {/* 底部提示 */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm animate-pulse">
+            点击继续
+          </div>
+        </div>
+      )}
 
       {/* Interaction Layer */}
       <ChoiceMenu 
@@ -273,12 +305,6 @@ const App: React.FC = () => {
         onClose={() => setShowHistory(false)}
       />
 
-      {/* Script Mode CG Overlay */}
-      <CGOverlay
-        cgImage={currentCG}
-        isVisible={!!currentCG && isScriptMode}
-        onClose={handleNextDialogue}
-      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import '../styles/animations.css';
 interface BackgroundProps {
   type: BackgroundType;
   parallaxOffset?: { x: number; y: number };
+  cgImage?: string;  // CG图片路径，如果提供则替换背景
 }
 
 // 场景背景配置 - 使用本地生成的背景图片
@@ -146,24 +147,51 @@ const generateParticles = (count: number) => {
 
 const particles = generateParticles(15);
 
-export const Background: React.FC<BackgroundProps> = memo(({ type, parallaxOffset = { x: 0, y: 0 } }) => {
+export const Background: React.FC<BackgroundProps> = memo(({ type, parallaxOffset = { x: 0, y: 0 }, cgImage }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [cgLoaded, setCgLoaded] = useState(false);
 
   const scene = useMemo(() => {
     return SCENE_BACKGROUNDS[type] || SCENE_BACKGROUNDS[BackgroundType.SCHOOL_ROOFTOP];
   }, [type]);
+
+  // 是否处于CG显示模式
+  const isCGMode = !!cgImage;
 
   return (
     <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
       {/* 备用渐变背景（始终显示作为基底） */}
       <div 
         className="absolute inset-0"
-        style={{ background: scene.fallbackGradient }}
+        style={{ background: isCGMode ? '#000' : scene.fallbackGradient }}
       />
       
-      {/* 场景图片 */}
-      {!imageError && (
+      {/* CG模式 - 全屏显示CG图片 */}
+      {isCGMode && (
+        <>
+          <div 
+            key={cgImage}
+            className={`absolute inset-0 transition-opacity duration-500 ${cgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            style={{ 
+              backgroundImage: `url(${cgImage})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#000'
+            }}
+          />
+          <img 
+            src={cgImage}
+            alt="CG"
+            className="hidden"
+            onLoad={() => setCgLoaded(true)}
+          />
+        </>
+      )}
+      
+      {/* 普通背景模式 */}
+      {!isCGMode && !imageError && (
         <div 
           key={type}
           className={`absolute transition-all duration-1000 ease-in-out ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -182,24 +210,26 @@ export const Background: React.FC<BackgroundProps> = memo(({ type, parallaxOffse
       )}
       
       {/* 隐藏的图片加载器 */}
-      <img 
-        src={scene.imageUrl}
-        alt=""
-        className="hidden"
-        onLoad={() => setImageLoaded(true)}
-        onError={() => setImageError(true)}
-      />
+      {!isCGMode && (
+        <img 
+          src={scene.imageUrl}
+          alt=""
+          className="hidden"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageError(true)}
+        />
+      )}
       
-      {/* 叠加层效果 */}
-      {scene.overlay && (
+      {/* 叠加层效果 - CG模式下不显示 */}
+      {!isCGMode && scene.overlay && (
         <div 
           className="absolute inset-0 transition-opacity duration-1000"
           style={{ background: scene.overlay }}
         />
       )}
       
-      {/* 粒子效果 */}
-      {scene.particles && (
+      {/* 粒子效果 - CG模式下不显示 */}
+      {!isCGMode && scene.particles && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {particles.map((p) => (
             <div
@@ -230,8 +260,10 @@ export const Background: React.FC<BackgroundProps> = memo(({ type, parallaxOffse
         </div>
       )}
       
-      {/* 底部渐变遮罩 */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-slate-900/20" />
+      {/* 底部渐变遮罩 - CG模式下不显示 */}
+      {!isCGMode && (
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-slate-900/20" />
+      )}
     </div>
   );
 });

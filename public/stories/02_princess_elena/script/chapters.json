@@ -168,7 +168,7 @@
         { "speaker": "艾琳娜", "text": "（背对着我，声音带着一丝颤抖和羞涩）别动，就在那里看着我。", "expression": "BLUSH" },
         { "speaker": "旁白", "text": "她摘下了那顶沉重的王冠，随手放在天鹅绒桌布上。然后，她的手伸向背后，解开了礼服的系带。", "expression": "BLUSH" },
         { "speaker": "旁白", "text": "华丽的白金礼服如雪崩般滑落，堆叠在她脚边。", "expression": "BLUSH" },
-        { "type": "cg", "cg": "cg6.png", "text": "艾琳娜转身，仅穿丝绸吊带裙和白丝，月光洒在身上" },
+        { "type": "cg", "cg": "cg6.jpg", "text": "艾琳娜转身，仅穿丝绸吊带裙和白丝，月光洒在身上" },
         { "speaker": "旁白", "text": "在那层层叠叠的布料之下，她只穿着一件极薄的丝绸吊带衬裙。以及……那一双象征着纯洁与尊贵的——蕾丝白丝长筒袜。", "expression": "BLUSH" },
         { "speaker": "艾琳娜", "text": "（脸颊绯红，眼波流转，一步步走向我）", "expression": "BLUSH" },
         { "speaker": "艾琳娜", "text": "现在的我，不是女王。我是你的艾琳娜。", "expression": "BLUSH" },

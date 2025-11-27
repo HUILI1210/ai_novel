@@ -20,13 +20,13 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
   // 艾琳娜 - 白金蔷薇公主 (stories/02_princess_elena/expressions/)
   '艾琳娜': {
     [CharacterExpression.NEUTRAL]: '/stories/02_princess_elena/expressions/elena_base.png',
-    [CharacterExpression.HAPPY]: '/stories/02_princess_elena/expressions/smiling.jpg',
-    [CharacterExpression.SAD]: '/stories/02_princess_elena/expressions/sadness.jpg',
-    [CharacterExpression.ANGRY]: '/stories/02_princess_elena/expressions/anger.jpg',
-    [CharacterExpression.BLUSH]: '/stories/02_princess_elena/expressions/blushing.jpg',
-    [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.jpg',
-    [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.jpg',
-    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.jpg'
+    [CharacterExpression.HAPPY]: '/stories/02_princess_elena/expressions/smiling.png',
+    [CharacterExpression.SAD]: '/stories/02_princess_elena/expressions/sadness.png',
+    [CharacterExpression.ANGRY]: '/stories/02_princess_elena/expressions/anger.png',
+    [CharacterExpression.BLUSH]: '/stories/02_princess_elena/expressions/blushing.png',
+    [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.png',
+    [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.png',
+    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.png'
   },
   // 柳如烟 - 古风花魁 (暂用雯曦图片作为占位)
   '柳如烟': {
