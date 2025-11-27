@@ -92,18 +92,42 @@ export const DialogueBox: React.FC<DialogueBoxProps> = memo(({
   const cleanedText = useMemo(() => cleanDialogueText(text), [text]);
 
   useEffect(() => {
+    const localCleanedText = cleanedText; // 捕获当前值避免闭包问题
+    
+    // 如果文本为空，直接结束
+    if (!localCleanedText || localCleanedText.length === 0) {
+      setDisplayedText('');
+      setIsTyping(false);
+      return;
+    }
+    
+    // 重置状态
     setDisplayedText('');
     setIsTyping(true);
+    
     let index = 0;
-    const localCleanedText = cleanedText; // 捕获当前值避免闭包问题
+    let currentText = '';
+
+    // 立即添加第一个字符
+    currentText = localCleanedText.charAt(0);
+    setDisplayedText(currentText);
+    audioService.playSfx('type');
+    index = 1;
+    
+    // 如果只有一个字符，直接结束
+    if (localCleanedText.length === 1) {
+      setIsTyping(false);
+      return;
+    }
 
     const timer = setInterval(() => {
       if (index < localCleanedText.length) {
-        setDisplayedText((prev) => prev + localCleanedText.charAt(index));
+        currentText += localCleanedText.charAt(index);
+        setDisplayedText(currentText);
         
         // Play typing sound
         if (index % TYPING_SOUND_INTERVAL === 0) {
-             audioService.playSfx('type');
+          audioService.playSfx('type');
         }
         
         index++;

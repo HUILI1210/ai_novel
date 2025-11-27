@@ -110,6 +110,22 @@ export class DialogueCacheService {
     return this.branchCache.has(key);
   }
 
+  // 手动缓存已生成的数据（避免重复生成）
+  cacheManualData(scriptId: string, data: BatchSceneData): void {
+    if (this.hasCachedBatchData(scriptId)) return;
+    
+    const cachedBatchData: CachedBatchData = {
+      scriptId: scriptId,
+      batchData: cleanBatchDialogueData(data),
+      generatedAt: Date.now(),
+      version: CACHE_VERSION
+    };
+
+    this.cache.set(scriptId, cachedBatchData);
+    this.saveCache();
+    console.log(`[DialogueCache] 手动缓存了剧本 ${scriptId} 的数据`);
+  }
+
   async generateAndCacheBatchData(script: ScriptTemplate): Promise<BatchSceneData> {
     // Check if already cached
     if (this.hasCachedBatchData(script.id)) {

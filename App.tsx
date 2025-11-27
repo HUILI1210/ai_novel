@@ -13,6 +13,7 @@ import { GameOverScreen } from './components/GameOverScreen';
 import { PauseMenu } from './components/PauseMenu';
 import { HistoryPanel } from './components/HistoryPanel';
 import { CGScene } from './components/CGScene';
+import { CGOverlay } from './components/CGOverlay';
 import { ScriptLibrary } from './components/ScriptLibrary';
 import { ScriptEditor } from './components/ScriptEditor';
 import { WeatherEffect, WeatherType } from './components/WeatherEffect';
@@ -54,6 +55,10 @@ const App: React.FC = () => {
     saveGameRecord,
     isAutoPlay,
     toggleAutoPlay,
+    // 剧本模式
+    isScriptMode,
+    currentCG,
+    handleStartScriptGame,
   } = useGameState();
 
   // UI States
@@ -117,7 +122,15 @@ const App: React.FC = () => {
   // 处理剧本选择
   const handleSelectScript = (script: ScriptTemplate) => {
     setShowScriptLibrary(false);
-    startWithScript(script);
+    
+    // 检查是否是有预定义剧本的脚本（如公主剧本）
+    if (script.id === 'preset_princess') {
+      // 使用预定义剧本模式
+      handleStartScriptGame(script.id);
+    } else {
+      // 使用AI生成模式
+      startWithScript(script);
+    }
   };
 
   const handleSaveScript = (script: ScriptTemplate) => {
@@ -215,15 +228,17 @@ const App: React.FC = () => {
         expression={gameState.currentScene?.expression || CharacterExpression.NEUTRAL} 
         isVisible={!gameState.isLoading}
         imageUrl={currentSpriteUrl}
-        characterName={currentScript?.character.name || '雯曦'}
-        isSpeaking={gameState.currentScene?.speaker === currentScript?.character.name}
+        characterName={isScriptMode ? '艾琳娜' : (currentScript?.character.name || '雯曦')}
+        isSpeaking={isScriptMode 
+          ? gameState.currentScene?.speaker === '艾琳娜'
+          : gameState.currentScene?.speaker === currentScript?.character.name}
         parallaxOffset={parallaxOffset}
       />
 
       {/* UI Layer */}
       <DialogueBox 
         speaker={gameState.currentScene?.speaker || "???"}
-        text={gameState.currentScene?.dialogue || "..."}
+        text={gameState.currentScene?.dialogue || gameState.currentScene?.narrative || "..."}
         onNext={handleNextDialogue}
         isTyping={isTyping}
         setIsTyping={setIsTyping}
@@ -266,6 +281,13 @@ const App: React.FC = () => {
         isVisible={showCG}
         imageUrl={cgImageUrl}
         onClose={() => setShowCG(false)}
+      />
+
+      {/* Script Mode CG Overlay */}
+      <CGOverlay
+        cgImage={currentCG}
+        isVisible={!!currentCG && isScriptMode}
+        onClose={handleNextDialogue}
       />
     </div>
   );

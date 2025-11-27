@@ -17,6 +17,15 @@ import { audioService } from '../services/audioService';
 import { AFFECTION_MIN, AFFECTION_MAX, AFFECTION_INITIAL } from '../constants/config';
 import { saveRecord, determineEndingType } from '../services/gameRecordService';
 import { DialogueCacheService } from '../services/dialogueCacheService';
+import { 
+  loadScript, 
+  hasPreloadedScript, 
+  getChapterScenes, 
+  getChoiceAffection,
+  isEndingChapter,
+  getEnding,
+  FullScript 
+} from '../services/scriptPlayerService';
 
 const INITIAL_STATE: GameState = {
   currentScene: null,
@@ -50,6 +59,14 @@ export function useGameState() {
   const [currentBatchChoices, setCurrentBatchChoices] = useState<{ text: string; sentiment: string }[]>([]);
   const [currentBatchBackground, setCurrentBatchBackground] = useState<string>('school_rooftop');
   const [currentBatchBgm, setCurrentBatchBgm] = useState<string>('daily');
+  
+  // 预定义剧本播放状态
+  const [isScriptMode, setIsScriptMode] = useState(false);
+  const [loadedScript, setLoadedScript] = useState<FullScript | null>(null);
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [scriptDialogueIndex, setScriptDialogueIndex] = useState(0);
+  const [currentCG, setCurrentCG] = useState<string | null>(null);
+  const [scriptScenes, setScriptScenes] = useState<SceneData[]>([]);
 
   // 检查是否有可用的 API Key
   const hasApiKey = !!(process.env.GEMINI_API_KEY || (process.env.DASHSCOPE_API_KEY && process.env.DASHSCOPE_API_KEY !== 'your-dashscope-api-key'));
@@ -170,9 +187,192 @@ export function useGameState() {
     }
   }, [hasApiKey, dialogueNodeToSceneData]);
 
+  // 处理预定义剧本游戏开始
+  const handleStartScriptGame = useCallback(async (scriptId: string) => {
+    await audioService.init();
+    audioService.playSfx('start');
+    
+    setGameState(prev => ({ ...prev, isLoading: true }));
+    setError(null);
+    
+    try {
+      // 加载预定义剧本
+      const script = await loadScript(scriptId);
+      if (!script) {
+        throw new Error(`无法加载剧本: ${scriptId}`);
+      }
+      
+      console.log(`[Script] 加载剧本: ${script.title}, ${script.chapters.length} 章`);
+      
+      // 获取第一章的场景数据
+      const scenes = getChapterScenes(script, 0, scriptId);
+      if (scenes.length === 0) {
+        throw new Error("剧本第一章没有对话");
+      }
+      
+      // 初始化剧本播放状态
+      setLoadedScript(script);
+      setIsScriptMode(true);
+      setCurrentChapterIndex(0);
+      setScriptDialogueIndex(0);
+      setScriptScenes(scenes);
+      
+      // 检查第一个场景是否是CG
+      const firstScene = scenes[0] as SceneData & { cgImage?: string; isCG?: boolean };
+      if (firstScene.isCG && firstScene.cgImage) {
+        setCurrentCG(firstScene.cgImage);
+      } else {
+        setCurrentCG(null);
+      }
+      
+      // 设置游戏状态
+      setGameState(prev => ({
+        ...prev,
+        currentScene: firstScene,
+        history: [firstScene],
+        affection: AFFECTION_INITIAL,
+        isLoading: false,
+        gameStarted: true,
+        turn: 1,
+      }));
+      
+    } catch (err) {
+      console.error('[Script] 剧本启动失败:', err);
+      setError(`剧本加载失败: ${err}`);
+      setGameState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  // 处理剧本模式下的继续/下一句
+  const handleScriptAdvance = useCallback(() => {
+    if (!isScriptMode || !loadedScript) return;
+    
+    const nextIndex = scriptDialogueIndex + 1;
+    
+    // 检查是否还有更多对话
+    if (nextIndex < scriptScenes.length) {
+      const nextScene = scriptScenes[nextIndex] as SceneData & { cgImage?: string; isCG?: boolean };
+      setScriptDialogueIndex(nextIndex);
+      
+      // 更新CG状态
+      if (nextScene.isCG && nextScene.cgImage) {
+        setCurrentCG(nextScene.cgImage);
+      } else {
+        setCurrentCG(null);
+      }
+      
+      // 检查是否是最后一句对话（显示选择）
+      const isLastDialogue = nextIndex === scriptScenes.length - 1;
+      if (isLastDialogue && nextScene.choices && nextScene.choices.length > 0) {
+        setShowChoices(true);
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        currentScene: nextScene,
+        history: [...prev.history, nextScene],
+        turn: prev.turn + 1,
+      }));
+    }
+  }, [isScriptMode, loadedScript, scriptDialogueIndex, scriptScenes]);
+
+  // 处理剧本模式下的选择
+  const handleScriptChoice = useCallback(async (choiceIndex: number) => {
+    if (!isScriptMode || !loadedScript) return;
+    
+    setShowChoices(false);
+    
+    // 获取好感度变化
+    const affectionChange = getChoiceAffection(loadedScript, currentChapterIndex, choiceIndex);
+    
+    // 检查是否有下一章
+    const nextChapterIndex = currentChapterIndex + 1;
+    
+    if (nextChapterIndex < loadedScript.chapters.length) {
+      // 进入下一章
+      const nextScenes = getChapterScenes(loadedScript, nextChapterIndex, loadedScript.id);
+      
+      setCurrentChapterIndex(nextChapterIndex);
+      setScriptDialogueIndex(0);
+      setScriptScenes(nextScenes);
+      
+      const firstScene = nextScenes[0] as SceneData & { cgImage?: string; isCG?: boolean };
+      if (firstScene.isCG && firstScene.cgImage) {
+        setCurrentCG(firstScene.cgImage);
+      } else {
+        setCurrentCG(null);
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        currentScene: firstScene,
+        history: [...prev.history, firstScene],
+        affection: Math.min(AFFECTION_MAX, Math.max(AFFECTION_MIN, prev.affection + affectionChange)),
+        turn: prev.turn + 1,
+      }));
+      
+      // 检查是否是结局章节
+      if (isEndingChapter(loadedScript, nextChapterIndex)) {
+        const ending = getEnding(loadedScript, nextChapterIndex);
+        console.log('[Script] 达成结局:', ending?.title);
+      }
+    } else {
+      // 所有章节完成，游戏结束
+      console.log('[Script] 剧本播放完成');
+      // 可以在这里处理结局显示
+    }
+  }, [isScriptMode, loadedScript, currentChapterIndex]);
+
   // 处理玩家选择
   const handleChoice = useCallback(async (choiceText: string) => {
     setShowChoices(false);
+    
+    // 剧本模式：使用剧本选择逻辑
+    if (isScriptMode && loadedScript) {
+      const choiceIndex = gameState.currentScene?.choices.findIndex(c => c.text === choiceText) ?? 0;
+      
+      // 获取好感度变化
+      const affectionChange = getChoiceAffection(loadedScript, currentChapterIndex, choiceIndex);
+      
+      // 检查是否有下一章
+      const nextChapterIndex = currentChapterIndex + 1;
+      
+      if (nextChapterIndex < loadedScript.chapters.length) {
+        // 进入下一章
+        const nextScenes = getChapterScenes(loadedScript, nextChapterIndex, loadedScript.id);
+        
+        setCurrentChapterIndex(nextChapterIndex);
+        setScriptDialogueIndex(0);
+        setScriptScenes(nextScenes);
+        
+        const firstScene = nextScenes[0] as SceneData & { cgImage?: string; isCG?: boolean };
+        if (firstScene.isCG && firstScene.cgImage) {
+          setCurrentCG(firstScene.cgImage);
+        } else {
+          setCurrentCG(null);
+        }
+        
+        setGameState(prev => ({
+          ...prev,
+          currentScene: firstScene,
+          history: [...prev.history, firstScene],
+          affection: Math.min(AFFECTION_MAX, Math.max(AFFECTION_MIN, prev.affection + affectionChange)),
+          turn: prev.turn + 1,
+        }));
+        
+        // 检查是否是结局章节
+        if (isEndingChapter(loadedScript, nextChapterIndex)) {
+          const ending = getEnding(loadedScript, nextChapterIndex);
+          console.log('[Script] 达成结局:', ending?.title);
+        }
+      } else {
+        // 所有章节完成，游戏结束
+        console.log('[Script] 剧本播放完成');
+      }
+      return;
+    }
+    
+    // AI生成模式
     setGameState(prev => ({ ...prev, isLoading: true }));
     
     try {
@@ -248,6 +448,38 @@ export function useGameState() {
     if (showChoices) return;
     if (gameState.currentScene?.isGameOver) return;
 
+    // 剧本模式：使用剧本推进逻辑
+    if (isScriptMode && loadedScript) {
+      const nextIndex = scriptDialogueIndex + 1;
+      
+      if (nextIndex < scriptScenes.length) {
+        const nextScene = scriptScenes[nextIndex] as SceneData & { cgImage?: string; isCG?: boolean };
+        setScriptDialogueIndex(nextIndex);
+        
+        // 更新CG状态
+        if (nextScene.isCG && nextScene.cgImage) {
+          setCurrentCG(nextScene.cgImage);
+        } else {
+          setCurrentCG(null);
+        }
+        
+        // 检查是否是最后一句对话（显示选择）
+        const isLastDialogue = nextIndex === scriptScenes.length - 1;
+        if (isLastDialogue && nextScene.choices && nextScene.choices.length > 0) {
+          setShowChoices(true);
+        }
+        
+        setGameState(prev => ({
+          ...prev,
+          currentScene: nextScene,
+          history: [...prev.history, nextScene],
+          turn: prev.turn + 1,
+        }));
+      }
+      return;
+    }
+
+    // AI生成模式：使用队列逻辑
     const nextIndex = queueIndex + 1;
     
     // 检查队列是否还有剩余对话
@@ -275,7 +507,7 @@ export function useGameState() {
       console.log('[Game] 对话序列结束，显示选项');
       setShowChoices(true);
     }
-  }, [gameState.isLoading, showChoices, gameState.currentScene?.isGameOver, queueIndex, dialogueQueue, currentBatchChoices, currentBatchBackground, currentBatchBgm, dialogueNodeToSceneData]);
+  }, [gameState.isLoading, showChoices, gameState.currentScene?.isGameOver, queueIndex, dialogueQueue, currentBatchChoices, currentBatchBackground, currentBatchBgm, dialogueNodeToSceneData, isScriptMode, loadedScript, scriptDialogueIndex, scriptScenes]);
 
   const toggleAutoPlay = useCallback(() => {
     setIsAutoPlay(prev => !prev);
@@ -398,9 +630,7 @@ export function useGameState() {
         
         // 缓存生成的数据
         setTimeout(() => {
-          dialogueCache.generateAndCacheBatchData(script).catch(error => {
-            console.warn('缓存对话序列失败:', error);
-          });
+          dialogueCache.cacheManualData(script.id, batchData);
         }, 100);
       }
       
@@ -478,6 +708,11 @@ export function useGameState() {
     isPreloading: false,
     preloadProgress: 0,
     bufferedChoicesCount: 0,
+    // 剧本模式状态
+    isScriptMode,
+    currentCG,
+    currentChapterIndex,
+    loadedScript,
     // 方法
     handleStartGame,
     handleChoice,
@@ -492,5 +727,9 @@ export function useGameState() {
     startWithScript,
     handleGeneratePlot,
     saveGameRecord,
+    // 剧本模式方法
+    handleStartScriptGame,
+    handleScriptAdvance,
+    handleScriptChoice,
   };
 }

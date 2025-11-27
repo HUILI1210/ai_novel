@@ -16,113 +16,120 @@ const SCENE_BACKGROUNDS: Record<BackgroundType, {
   brightness?: number;
 }> = {
   [BackgroundType.SCHOOL_ROOFTOP]: {
-    imageUrl: '/backgrounds/school_rooftop.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/school_rooftop.png',
     fallbackGradient: 'linear-gradient(to bottom, #ff7e5f 0%, #feb47b 30%, #ffcda5 50%, #87CEEB 70%, #4a90a4 100%)',
     overlay: 'linear-gradient(to bottom, rgba(255,100,50,0.1) 0%, transparent 50%)',
     particles: 'sakura',
     brightness: 0.9
   },
   [BackgroundType.CLASSROOM]: {
-    imageUrl: '/backgrounds/classroom.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/classroom.png',
     fallbackGradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ee9ca7 100%)',
     overlay: 'linear-gradient(to right, rgba(255,200,100,0.1) 0%, transparent 50%)',
     particles: 'dust',
     brightness: 0.9
   },
   [BackgroundType.SCHOOL_GATE]: {
-    imageUrl: '/backgrounds/school_gate.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/school_gate.png',
     fallbackGradient: 'linear-gradient(to bottom, #87CEEB 0%, #98D8C8 50%, #F7DC6F 100%)',
     particles: 'sakura',
     brightness: 0.9
   },
   [BackgroundType.SCHOOL_CORRIDOR]: {
-    imageUrl: '/backgrounds/school_corridor.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/school_corridor.png',
     fallbackGradient: 'linear-gradient(135deg, #E8E8E8 0%, #F5F5DC 50%, #FFEFD5 100%)',
     particles: 'dust',
     brightness: 0.9
   },
   [BackgroundType.LIBRARY]: {
-    imageUrl: '/backgrounds/library.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/library.png',
     fallbackGradient: 'linear-gradient(to bottom, #8B4513 0%, #A0522D 50%, #D2691E 100%)',
     brightness: 0.85
   },
   [BackgroundType.STREET_SUNSET]: {
-    imageUrl: '/backgrounds/street_sunset.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/street_sunset.png',
     fallbackGradient: 'linear-gradient(to bottom, #ff6b6b 0%, #feca57 30%, #ff9ff3 60%, #54a0ff 100%)',
     overlay: 'linear-gradient(to top, rgba(0,0,0,0.2) 0%, transparent 50%)',
     particles: 'sakura',
     brightness: 0.9
   },
   [BackgroundType.RIVERSIDE]: {
-    imageUrl: '/backgrounds/riverside.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/riverside.png',
     fallbackGradient: 'linear-gradient(to bottom, #FFB6C1 0%, #87CEEB 50%, #98D8C8 100%)',
     particles: 'sakura',
     brightness: 0.9
   },
   [BackgroundType.CONVENIENCE_STORE]: {
-    imageUrl: '/backgrounds/convenience_store.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/convenience_store.png',
     fallbackGradient: 'linear-gradient(to bottom, #FFFFFF 0%, #F0F0F0 50%, #E0E0E0 100%)',
     brightness: 0.9
   },
   [BackgroundType.CAFE]: {
-    imageUrl: '/backgrounds/cafe.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/cafe.png',
     fallbackGradient: 'linear-gradient(to bottom right, #3d2914 0%, #5d4037 30%, #6d4c41 60%, #4e342e 100%)',
     overlay: 'radial-gradient(circle at 30% 40%, rgba(255,180,100,0.15) 0%, transparent 60%)',
     brightness: 0.85
   },
   [BackgroundType.PARK_NIGHT]: {
-    imageUrl: '/backgrounds/park_night.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/park_night.png',
     fallbackGradient: 'linear-gradient(to bottom, #0c1445 0%, #1a237e 30%, #283593 60%, #1a1a2e 100%)',
     overlay: 'radial-gradient(circle at 50% 30%, rgba(100,150,255,0.1) 0%, transparent 50%)',
     particles: 'stars',
     brightness: 0.8
   },
   [BackgroundType.TRAIN_STATION]: {
-    imageUrl: '/backgrounds/train_station.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/train_station.png',
     fallbackGradient: 'linear-gradient(to bottom, #FF6347 0%, #FFA500 30%, #4682B4 70%, #2F4F4F 100%)',
     brightness: 0.9
   },
   [BackgroundType.BEDROOM]: {
-    imageUrl: '/backgrounds/bedroom.png',
+    imageUrl: '/stories/01_tsundere_wenxi/backgrounds/bedroom.png',
     fallbackGradient: 'linear-gradient(to bottom, #FFB6C1 0%, #FFC0CB 30%, #FFE4E1 60%, #FFFAF0 100%)',
     overlay: 'radial-gradient(circle at 20% 50%, rgba(255,150,80,0.1) 0%, transparent 50%)',
     brightness: 0.85
   },
   // 奇幻王国场景
   [BackgroundType.PALACE_HALL]: {
-    imageUrl: '/backgrounds/palace_hall.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/palace_hall.png',
     fallbackGradient: 'linear-gradient(to bottom, #DAA520 0%, #FFD700 30%, #FFF8DC 60%, #FFFFF0 100%)',
     overlay: 'radial-gradient(circle at 50% 30%, rgba(255,215,0,0.15) 0%, transparent 60%)',
     brightness: 0.9
   },
   [BackgroundType.PALACE_GARDEN]: {
-    imageUrl: '/backgrounds/palace_garden.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/palace_garden.png',
     fallbackGradient: 'linear-gradient(to bottom, #191970 0%, #483D8B 30%, #6A5ACD 60%, #9370DB 100%)',
     overlay: 'radial-gradient(circle at 50% 50%, rgba(200,200,255,0.1) 0%, transparent 50%)',
     particles: 'stars',
     brightness: 0.8
   },
   [BackgroundType.PALACE_BALCONY]: {
-    imageUrl: '/backgrounds/palace_balcony.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/palace_balcony.png',
     fallbackGradient: 'linear-gradient(to bottom, #FF6347 0%, #FFA500 30%, #FFD700 60%, #87CEEB 100%)',
     particles: 'sakura',
     brightness: 0.9
   },
   [BackgroundType.CASTLE_CORRIDOR]: {
-    imageUrl: '/backgrounds/castle_corridor.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/castle_corridor.png',
     fallbackGradient: 'linear-gradient(to bottom, #2F4F4F 0%, #696969 30%, #808080 60%, #A9A9A9 100%)',
     brightness: 0.75
   },
   [BackgroundType.ROYAL_BEDROOM]: {
-    imageUrl: '/backgrounds/royal_bedroom.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/royal_bedroom.png',
     fallbackGradient: 'linear-gradient(to bottom, #8B0000 0%, #DC143C 30%, #FF69B4 60%, #FFB6C1 100%)',
     overlay: 'radial-gradient(circle at 30% 40%, rgba(255,200,150,0.15) 0%, transparent 50%)',
     brightness: 0.8
   },
   [BackgroundType.TRAINING_GROUND]: {
-    imageUrl: '/backgrounds/training_ground.png',
+    imageUrl: '/stories/02_princess_elena/backgrounds/training_ground.png',
     fallbackGradient: 'linear-gradient(to bottom, #87CEEB 0%, #ADD8E6 30%, #F0E68C 60%, #DEB887 100%)',
     brightness: 0.9
+  },
+  [BackgroundType.ABANDONED_GARDEN]: {
+    imageUrl: '/stories/02_princess_elena/backgrounds/abandoned_garden.png',
+    fallbackGradient: 'linear-gradient(to bottom, #2F4F4F 0%, #556B2F 30%, #8B8682 60%, #696969 100%)',
+    overlay: 'radial-gradient(circle at 50% 50%, rgba(100,150,100,0.1) 0%, transparent 50%)',
+    particles: 'dust',
+    brightness: 0.7
   }
 };
 

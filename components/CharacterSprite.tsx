@@ -6,23 +6,38 @@ import '../styles/animations.css';
 type CharacterImageSet = Record<CharacterExpression, string>;
 
 const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
-  // 雯曦 - 傲娇青梅竹马
+  // 雯曦 - 傲娇青梅竹马 (stories/01_tsundere_wenxi/expressions/)
   '雯曦': {
-    [CharacterExpression.NEUTRAL]: '/characters/wenxi_neutral.png',
-    [CharacterExpression.HAPPY]: '/characters/wenxi_happy.png',
-    [CharacterExpression.SAD]: '/characters/wenxi_sad.png',
-    [CharacterExpression.ANGRY]: '/characters/wenxi_angry.png',
-    [CharacterExpression.BLUSH]: '/characters/wenxi_blush.png',
-    [CharacterExpression.SURPRISED]: '/characters/wenxi_surprised.png'
+    [CharacterExpression.NEUTRAL]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
+    [CharacterExpression.HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png',
+    [CharacterExpression.SAD]: '/stories/01_tsundere_wenxi/expressions/wenxi_sad.png',
+    [CharacterExpression.ANGRY]: '/stories/01_tsundere_wenxi/expressions/wenxi_angry.png',
+    [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
+    [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
+    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'
   },
-  // 艾琳娜 - 高傲王国公主 (使用用户提供的图片)
+  // 艾琳娜 - 白金蔷薇公主 (stories/02_princess_elena/expressions/)
   '艾琳娜': {
-    [CharacterExpression.NEUTRAL]: '/characters/elena_base.png',
-    [CharacterExpression.HAPPY]: '/characters/elena_base.png',
-    [CharacterExpression.SAD]: '/characters/elena_base.png',
-    [CharacterExpression.ANGRY]: '/characters/elena_base.png',
-    [CharacterExpression.BLUSH]: '/characters/elena_base.png',
-    [CharacterExpression.SURPRISED]: '/characters/elena_base.png'
+    [CharacterExpression.NEUTRAL]: '/stories/02_princess_elena/expressions/elena_base.png',
+    [CharacterExpression.HAPPY]: '/stories/02_princess_elena/expressions/smiling.jpg',
+    [CharacterExpression.SAD]: '/stories/02_princess_elena/expressions/sadness.jpg',
+    [CharacterExpression.ANGRY]: '/stories/02_princess_elena/expressions/anger.jpg',
+    [CharacterExpression.BLUSH]: '/stories/02_princess_elena/expressions/blushing.jpg',
+    [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.jpg',
+    [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.jpg',
+    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.jpg'
+  },
+  // 柳如烟 - 古风花魁 (暂用雯曦图片作为占位)
+  '柳如烟': {
+    [CharacterExpression.NEUTRAL]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
+    [CharacterExpression.HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png',
+    [CharacterExpression.SAD]: '/stories/01_tsundere_wenxi/expressions/wenxi_sad.png',
+    [CharacterExpression.ANGRY]: '/stories/01_tsundere_wenxi/expressions/wenxi_angry.png',
+    [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
+    [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
+    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'
   }
 };
 

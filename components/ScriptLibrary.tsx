@@ -1,19 +1,20 @@
 import React, { useState, memo, useEffect, useCallback } from 'react';
 import { ScriptTemplate } from '../types';
-import { getAllScripts, deleteScript, isPresetScript } from '../services/scriptLibraryService';
+import { getAllScripts, deleteScript, isPresetScript, hasGeneratedPlot, saveGeneratedPlot } from '../services/scriptLibraryService';
 import { getBestEnding, getEndingDescription } from '../services/gameRecordService';
 import { DialogueCacheService } from '../services/dialogueCacheService';
+import { generateFullPlot } from '../services/aiService';
 import { ScriptEditor } from './ScriptEditor';
 
-// 角色预览图映射
+// 角色预览图映射 (从 stories 文件夹加载)
 const CHARACTER_PREVIEW_IMAGES: Record<string, string> = {
-  '雯曦': '/characters/wenxi_neutral.png',
-  '艾琳娜': '/characters/elena_base.png',
-  '柳如烟': '/characters/wenxi_neutral.png', // TODO: 生成柳如烟的立绘
+  '雯曦': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
+  '艾琳娜': '/stories/02_princess_elena/expressions/elena_base.png',
+  '柳如烟': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png', // TODO: 生成柳如烟的立绘
 };
 
 const getCharacterPreviewImage = (characterName: string): string => {
-  return CHARACTER_PREVIEW_IMAGES[characterName] || '/characters/wenxi_neutral.png';
+  return CHARACTER_PREVIEW_IMAGES[characterName] || '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png';
 };
 
 interface ScriptLibraryProps {
@@ -30,6 +31,12 @@ interface PreloadStatus {
   isLoading: boolean;
 }
 
+interface GenerateStatus {
+  scriptId: string;
+  status: string;
+  isGenerating: boolean;
+}
+
 export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
   isVisible,
   onClose,
@@ -43,21 +50,93 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
   const [expandedScripts, setExpandedScripts] = useState<Set<string>>(new Set());
   const [preloadStatus, setPreloadStatus] = useState<PreloadStatus | null>(null);
   const [cachedScripts, setCachedScripts] = useState<Set<string>>(new Set());
+  const [generatedScripts, setGeneratedScripts] = useState<Set<string>>(new Set());
+  const [generateStatus, setGenerateStatus] = useState<GenerateStatus | null>(null);
 
   useEffect(() => {
     if (isVisible) {
-      setScripts(getAllScripts());
+      const allScripts = getAllScripts();
+      setScripts(allScripts);
       // 检查哪些剧本已缓存
       const cacheService = DialogueCacheService.getInstance();
       const cached = new Set<string>();
-      getAllScripts().forEach(script => {
+      const generated = new Set<string>();
+      allScripts.forEach(script => {
         if (cacheService.isScriptFullyCached(script.id)) {
           cached.add(script.id);
         }
+        if (hasGeneratedPlot(script.id)) {
+          generated.add(script.id);
+        }
       });
       setCachedScripts(cached);
+      setGeneratedScripts(generated);
     }
   }, [isVisible]);
+
+  // 一键生成剧情全文
+  const handleGeneratePlot = useCallback(async (script: ScriptTemplate, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (generateStatus?.isGenerating) {
+      alert('正在生成中，请稍候...');
+      return;
+    }
+
+    if (hasGeneratedPlot(script.id)) {
+      if (!confirm('该剧本已有生成的剧情，是否重新生成？')) {
+        return;
+      }
+    }
+
+    setGenerateStatus({
+      scriptId: script.id,
+      status: '准备生成...',
+      isGenerating: true
+    });
+
+    try {
+      const plot = await generateFullPlot(
+        script.character.name,
+        script.character.personality,
+        script.character.appearance,
+        script.character.relationship,
+        script.setting,
+        (status) => {
+          setGenerateStatus(prev => prev ? { ...prev, status } : null);
+        }
+      );
+
+      // 保存生成的剧情
+      saveGeneratedPlot(script.id, plot);
+      setGeneratedScripts(prev => new Set([...prev, script.id]));
+      
+      // 更新剧本列表
+      setScripts(getAllScripts());
+
+      setGenerateStatus({
+        scriptId: script.id,
+        status: '✓ 生成完成！',
+        isGenerating: false
+      });
+
+      setTimeout(() => {
+        setGenerateStatus(null);
+      }, 2000);
+
+    } catch (error) {
+      console.error('生成剧情失败:', error);
+      setGenerateStatus({
+        scriptId: script.id,
+        status: `❌ 生成失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        isGenerating: false
+      });
+
+      setTimeout(() => {
+        setGenerateStatus(null);
+      }, 3000);
+    }
+  }, [generateStatus]);
 
   const handlePreload = useCallback(async (script: ScriptTemplate, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -228,7 +307,29 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
                   </div>
                 </div>
                 
-                <div className="flex gap-1 items-center">
+                <div className="flex gap-1 items-center flex-wrap">
+                      {/* 一键生成剧情按钮 */}
+                      {generateStatus?.scriptId === script.id ? (
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          generateStatus.isGenerating ? 'bg-purple-600/30 text-purple-400 animate-pulse' : 
+                          generateStatus.status.includes('✓') ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                        }`}>
+                          {generateStatus.status}
+                        </span>
+                      ) : generatedScripts.has(script.id) ? (
+                        <span className="px-2 py-1 text-xs bg-emerald-600/30 text-emerald-400 rounded-full flex items-center gap-1">
+                          ✓ 已生成
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => handleGeneratePlot(script, e)}
+                          className="px-2 py-1 text-xs bg-purple-600/30 text-purple-400 rounded-full hover:bg-purple-600/50 transition-colors flex items-center gap-1"
+                          title="一键生成完整剧情（约5000字）"
+                        >
+                          ✨ 生成剧情
+                        </button>
+                      )}
+
                       {/* 预加载按钮 */}
                       {cachedScripts.has(script.id) ? (
                         <span className="px-2 py-1 text-xs bg-green-600/30 text-green-400 rounded-full">

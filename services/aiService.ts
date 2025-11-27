@@ -807,3 +807,134 @@ export const startNewGameBatch = async (): Promise<BatchSceneData> => {
 export const resetBatchHistory = () => {
   batchChatHistory = [];
 };
+
+/**
+ * 生成完整剧情框架
+ * 根据角色设定生成详细的故事大纲（约5000字，包含8-10个章节）
+ */
+export const generateFullPlot = async (
+  characterName: string,
+  personality: string,
+  appearance: string,
+  relationship: string,
+  setting: string,
+  onProgress?: (status: string) => void
+): Promise<string> => {
+  onProgress?.('正在生成剧情框架...');
+  
+  const prompt = `你是一个专业的视觉小说剧本作家。请根据以下角色设定，创作一个完整的恋爱故事剧情框架。
+
+【角色设定】
+- 角色名称：${characterName}
+- 性格特点：${personality}
+- 外貌描写：${appearance}
+- 与主角关系：${relationship}
+- 故事背景：${setting}
+
+【创作要求】
+1. 创作一个完整的恋爱故事，包含 8-10 个章节
+2. 每个章节约 400-600 字，总计约 4000-5000 字
+3. 故事结构要包含：序章（初遇）、发展（误会/冲突）、高潮（危机/转折）、终章（告白/HE）
+4. 每个章节要有明确的场景、情感发展和关键事件
+5. 在关键章节末尾标注【抉择时刻】，提供 2-3 个选择分支，影响后续剧情走向
+6. 对话要符合角色性格，情感描写要细腻真实
+7. 结合环境描写和动作描写，增强画面感
+
+【输出格式】
+【序章：标题】
+正文内容...
+
+【第一章：标题】
+正文内容...
+【抉择时刻】
+选项1：xxx
+选项2：xxx
+选项3：xxx
+
+...以此类推
+
+请开始创作：`;
+
+  try {
+    if (AI_PROVIDER === 'gemini') {
+      return await geminiGenerateFullPlot(prompt, onProgress);
+    } else {
+      return await openRouterGenerateFullPlot(prompt, onProgress);
+    }
+  } catch (error) {
+    console.error('生成剧情框架失败:', error);
+    throw error;
+  }
+};
+
+// Gemini 生成完整剧情
+async function geminiGenerateFullPlot(prompt: string, onProgress?: (status: string) => void): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('未配置 GEMINI_API_KEY');
+  }
+
+  onProgress?.('正在调用 Gemini API...');
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 8192,
+        }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini API 错误: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  
+  onProgress?.('剧情生成完成！');
+  return text;
+}
+
+// OpenRouter 生成完整剧情
+async function openRouterGenerateFullPlot(prompt: string, onProgress?: (status: string) => void): Promise<string> {
+  const apiKey = getOpenRouterApiKey();
+  if (!apiKey) {
+    throw new Error('未配置 OpenRouter API Key');
+  }
+
+  onProgress?.('正在调用 OpenRouter API...');
+  
+  const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': window.location.origin,
+      'X-Title': 'AI Visual Novel'
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+      max_tokens: 8192
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenRouter API 错误: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  
+  onProgress?.('剧情生成完成！');
+  return text;
+}
+
