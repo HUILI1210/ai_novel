@@ -8,7 +8,7 @@ import { AI_PROVIDER } from '../constants/config';
 import { hasAnySave, getLatestSave, SaveData } from '../services/saveService';
 
 // 女主角立绘URL (使用本地透明背景图片)
-const HEROINE_IMAGE = '/stories/02_princess_elena/expressions/elena_base.png';
+const HEROINE_IMAGE = '/stories/02_princess_elena/expressions/smiling.png';
 
 interface MainMenuProps {
   hasApiKey: boolean;

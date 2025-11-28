@@ -91,6 +91,7 @@ export interface ScriptTemplate {
   setting: string;
   createdAt: number;
   updatedAt: number;
+  useAIMode?: boolean;  // true = 强制使用AI模式, undefined = 自动判断（有预加载则用剧本模式）
 }
 
 export interface CGScene {

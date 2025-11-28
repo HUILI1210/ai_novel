@@ -1,14 +1,18 @@
 import React, { useState, memo, useEffect, useCallback } from 'react';
 import { ScriptTemplate } from '../types';
-import { getAllScripts, deleteScript, isPresetScript, hasGeneratedPlot, saveGeneratedPlot } from '../services/scriptLibraryService';
+import { getAllScripts, deleteScript, isPresetScript, hasGeneratedPlot, saveGeneratedPlot, setScriptAIMode, resetScriptMode } from '../services/scriptLibraryService';
 import { getBestEnding, getEndingDescription } from '../services/gameRecordService';
 import { generateFullPlot } from '../services/aiService';
 import { ScriptEditor } from './ScriptEditor';
+import { hasPreloadedScript } from '../services/scriptPlayerService';
+
+// 模式筛选类型
+type ModeFilter = 'all' | 'script' | 'ai';
 
 // 角色预览图映射 (从 stories 文件夹加载)
 const CHARACTER_PREVIEW_IMAGES: Record<string, string> = {
   '雯曦': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-  '艾琳娜': '/stories/02_princess_elena/expressions/elena_base.png',
+  '艾琳娜': '/stories/02_princess_elena/expressions/smiling.png',
   '柳如烟': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png', // TODO: 生成柳如烟的立绘
 };
 
@@ -42,6 +46,46 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
   const [expandedScripts, setExpandedScripts] = useState<Set<string>>(new Set());
   const [generatedScripts, setGeneratedScripts] = useState<Set<string>>(new Set());
   const [generateStatus, setGenerateStatus] = useState<GenerateStatus | null>(null);
+  const [modeFilter, setModeFilter] = useState<ModeFilter>('all');
+
+  // 计算剧本的实际运行模式
+  const getActualMode = useCallback((script: ScriptTemplate): 'script' | 'ai' => {
+    // 优先使用显式设置
+    if (script.useAIMode === true) return 'ai';
+    // 如果有预加载剧本文件，默认使用剧本模式
+    if (hasPreloadedScript(script.id)) return 'script';
+    // 其他情况使用AI模式
+    return 'ai';
+  }, []);
+
+  // 切换剧本模式
+  const handleToggleMode = useCallback((script: ScriptTemplate, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentMode = getActualMode(script);
+    
+    if (currentMode === 'script') {
+      // 切换到AI模式前确认
+      if (confirm('切换到 AI 模式后，将使用 AI 实时生成剧情，不会使用预设剧本内容。\n\n注意：原有剧本文件不会被删除，可随时切换回剧本模式。\n\n确定切换吗？')) {
+        setScriptAIMode(script.id, true);
+        setScripts(getAllScripts());
+      }
+    } else {
+      // 切换回剧本模式（只有有预加载的剧本才能切换回来）
+      if (hasPreloadedScript(script.id)) {
+        resetScriptMode(script.id);
+        setScripts(getAllScripts());
+      } else {
+        alert('该剧本没有预设剧情文件，只能使用 AI 模式。');
+      }
+    }
+  }, [getActualMode]);
+
+  // 筛选后的剧本列表
+  const filteredScripts = scripts.filter(script => {
+    if (modeFilter === 'all') return true;
+    const actualMode = getActualMode(script);
+    return actualMode === modeFilter;
+  });
 
   useEffect(() => {
     if (isVisible) {
@@ -182,21 +226,61 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-slate-800/95 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col border border-slate-700">
         {/* Header */}
-        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-amber-400 flex items-center gap-2">
-            📚 剧本库
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
-          >
-            ✕
-          </button>
+        <div className="p-6 border-b border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-amber-400 flex items-center gap-2">
+              📚 剧本库
+            </h2>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          {/* 模式筛选 */}
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 text-sm">筛选：</span>
+            <button
+              onClick={() => setModeFilter('all')}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                modeFilter === 'all' 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              全部
+            </button>
+            <button
+              onClick={() => setModeFilter('script')}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                modeFilter === 'script' 
+                  ? 'bg-cyan-600 text-white' 
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              📖 剧本模式
+            </button>
+            <button
+              onClick={() => setModeFilter('ai')}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                modeFilter === 'ai' 
+                  ? 'bg-amber-600 text-white' 
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              🤖 AI 模式
+            </button>
+          </div>
         </div>
 
         {/* Script List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {scripts.map((script) => (
+          {filteredScripts.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              没有符合条件的剧本
+            </div>
+          ) : filteredScripts.map((script) => (
             <div
               key={script.id}
               onClick={() => handleSelect(script)}
@@ -228,6 +312,27 @@ export const ScriptLibrary: React.FC<ScriptLibraryProps> = memo(({
                         预设
                       </span>
                     )}
+                    {/* 剧本模式/AI模式标识 - 可点击切换 */}
+                    {(() => {
+                      const actualMode = getActualMode(script);
+                      const canSwitch = hasPreloadedScript(script.id); // 有预加载的才能切换
+                      return (
+                        <button
+                          onClick={(e) => handleToggleMode(script, e)}
+                          className={`px-2 py-0.5 text-xs rounded-full text-white transition-all ${
+                            actualMode === 'script'
+                              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500'
+                              : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500'
+                          } ${canSwitch ? 'cursor-pointer' : 'cursor-default'}`}
+                          title={canSwitch 
+                            ? `点击切换模式（当前：${actualMode === 'script' ? '剧本模式' : 'AI模式'}）` 
+                            : 'AI模式（无预设剧情文件）'}
+                        >
+                          {actualMode === 'script' ? '📖 剧本模式' : '🤖 AI模式'}
+                          {canSwitch && ' ⇄'}
+                        </button>
+                      );
+                    })()}
                     {(() => {
                       const best = getBestEnding(script.id);
                       if (best) {

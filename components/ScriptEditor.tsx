@@ -20,6 +20,7 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = memo(({
   const [name, setName] = useState(initialScript?.name || '');
   const [description, setDescription] = useState(initialScript?.description || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [useAIMode, setUseAIMode] = useState(initialScript?.useAIMode ?? true);  // 新建剧本默认使用AI模式
   
   const isPreset = isEditing && initialScript ? isPresetScript(initialScript.id) : false;
   const canEditCharacter = isEditing ? !isPreset : true;
@@ -74,7 +75,8 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = memo(({
         const updates: Partial<ScriptTemplate> = {
           name,
           description,
-          plotFramework
+          plotFramework,
+          useAIMode
         };
         
         // 如果不是预设剧本，可以修改更多字段
@@ -91,7 +93,7 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = memo(({
         onSave(updatedScript);
       } else {
         // 创建模式：创建新剧本
-        const script = createScript(name, character, plotFramework, setting, description);
+        const script = createScript(name, character, plotFramework, setting, description, useAIMode);
         onSave(script);
       }
     } catch (e) {
@@ -151,6 +153,60 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = memo(({
             />
             {isPreset && (
               <p className="text-xs text-slate-500">预设剧本无法修改故事背景</p>
+            )}
+            
+            {/* 游戏模式选择 - 只在新建时显示 */}
+            {!isEditing && (
+              <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                <h4 className="text-sm font-semibold text-slate-300 mb-3">游戏模式</h4>
+                <div className="flex gap-4">
+                  <label className={`flex-1 cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                    useAIMode 
+                      ? 'border-amber-500 bg-amber-500/10' 
+                      : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="gameMode" 
+                      checked={useAIMode}
+                      onChange={() => setUseAIMode(true)}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🤖</span>
+                      <div>
+                        <p className="font-medium text-slate-200">AI 模式</p>
+                        <p className="text-xs text-slate-400">AI 实时生成剧情，自由探索</p>
+                      </div>
+                    </div>
+                  </label>
+                  <label className={`flex-1 cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                    !useAIMode 
+                      ? 'border-cyan-500 bg-cyan-500/10' 
+                      : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="gameMode" 
+                      checked={!useAIMode}
+                      onChange={() => setUseAIMode(false)}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📖</span>
+                      <div>
+                        <p className="font-medium text-slate-200">剧本模式</p>
+                        <p className="text-xs text-slate-400">使用预设剧情，支持存档</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  {useAIMode 
+                    ? '💡 AI 模式将根据角色设定实时生成剧情，每次游玩都会有不同体验' 
+                    : '💡 剧本模式需要先生成完整剧情框架，游玩时可存档读档'}
+                </p>
+              </div>
             )}
           </div>
 

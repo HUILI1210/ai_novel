@@ -16,13 +16,10 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
     [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
     [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.CONFUSION]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.SERIOUS]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-    [CharacterExpression.VERY_HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'
   },
   // 艾琳娜 - 白金蔷薇公主 (stories/02_princess_elena/expressions/)
   '艾琳娜': {
-    [CharacterExpression.NEUTRAL]: '/stories/02_princess_elena/expressions/elena_base.png',
+    [CharacterExpression.NEUTRAL]: '/stories/02_princess_elena/expressions/smiling.png',
     [CharacterExpression.HAPPY]: '/stories/02_princess_elena/expressions/smiling.png',
     [CharacterExpression.SAD]: '/stories/02_princess_elena/expressions/sadness.png',
     [CharacterExpression.ANGRY]: '/stories/02_princess_elena/expressions/anger.png',
@@ -30,9 +27,6 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.png',
     [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.png',
     [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.png',
-    [CharacterExpression.CONFUSION]: '/stories/02_princess_elena/expressions/confusion.png',
-    [CharacterExpression.SERIOUS]: '/stories/02_princess_elena/expressions/serious.png',
-    [CharacterExpression.VERY_HAPPY]: '/stories/02_princess_elena/expressions/very_happy.png'
   },
   // 柳如烟 - 古风花魁 (暂用雯曦图片作为占位)
   '柳如烟': {
@@ -44,9 +38,6 @@ const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
     [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
     [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
     [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.CONFUSION]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.SERIOUS]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-    [CharacterExpression.VERY_HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'
   }
 };
 

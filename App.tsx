@@ -25,7 +25,8 @@ import { workerService } from './services/workerService';
 import { DialogueCacheService } from './services/dialogueCacheService';
 import { getAllScripts } from './services/scriptLibraryService';
 import { getCharacterByScriptId } from './constants/storyAssets';
-import { saveGame, SaveData } from './services/saveService';
+import { saveGame, SaveData, getSaveIndex } from './services/saveService';
+import { hasPreloadedScript } from './services/scriptPlayerService';
 import './styles/animations.css';
 
 // 初始化Worker服务
@@ -226,8 +227,13 @@ const App: React.FC = () => {
   const handleSelectScript = (script: ScriptTemplate) => {
     setShowScriptLibrary(false);
     
-    // 检查是否是有预定义剧本的脚本（如公主剧本）
-    if (script.id === 'preset_princess') {
+    // 判断使用剧本模式还是AI模式
+    // 优先级: 1. 显式设置 useAIMode=true 时使用AI模式
+    //        2. 有预加载剧本文件时使用剧本模式
+    //        3. 其他情况使用AI模式
+    const shouldUseAIMode = script.useAIMode === true || !hasPreloadedScript(script.id);
+    
+    if (!shouldUseAIMode) {
       // 使用预定义剧本模式
       handleStartScriptGame(script.id);
     } else {
@@ -283,13 +289,12 @@ const App: React.FC = () => {
           onOpacityChange={setDialogueOpacity}
           onToggleMute={handleToggleMute}
         />
-        {/* 读档弹窗（主菜单） */}
+        {/* 读档弹窗（主菜单 - 显示所有剧本存档） */}
         <SaveLoadModal
           isOpen={showLoadModal}
           onClose={() => setShowLoadModal(false)}
           mode="load"
-          scriptId="preset_princess"
-          scriptTitle="选择存档"
+          showAllScripts={true}
           onLoad={handleLoadSave}
         />
       </>

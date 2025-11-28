@@ -97,6 +97,20 @@ const SCRIPT_PATHS: Record<string, string> = {
 const scriptCache: Record<string, FullScript> = {};
 
 /**
+ * 检查剧本是否有预加载内容（用于判断使用剧本模式还是AI模式）
+ */
+export const hasPreloadedScript = (scriptId: string): boolean => {
+  return scriptId in SCRIPT_PATHS;
+};
+
+/**
+ * 获取所有有预加载剧本的ID列表
+ */
+export const getPreloadedScriptIds = (): string[] => {
+  return Object.keys(SCRIPT_PATHS);
+};
+
+/**
  * 加载剧本文件
  */
 export const loadScript = async (scriptId: string): Promise<FullScript | null> => {
@@ -123,13 +137,6 @@ export const loadScript = async (scriptId: string): Promise<FullScript | null> =
     console.error('加载剧本出错:', error);
     return null;
   }
-};
-
-/**
- * 检查是否有预定义剧本
- */
-export const hasPreloadedScript = (scriptId: string): boolean => {
-  return scriptId in SCRIPT_PATHS;
 };
 
 /**

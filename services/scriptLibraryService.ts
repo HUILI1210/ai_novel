@@ -6,6 +6,7 @@ import { ScriptTemplate, CharacterConfig } from '../types';
 
 const STORAGE_KEY = 'gala_script_library';
 const GENERATED_PLOTS_KEY = 'gala_generated_plots';
+const MODE_OVERRIDES_KEY = 'gala_script_mode_overrides';  // 存储模式切换覆盖
 
 // 预设剧本ID列表（不可删除）
 const PRESET_SCRIPT_IDS = ['default', 'preset_tsundere', 'preset_princess', 'preset_courtesan'];
@@ -76,6 +77,50 @@ export const isPresetScript = (id: string): boolean => {
   return PRESET_SCRIPT_IDS.includes(id);
 };
 
+// ============ 模式切换管理 ============
+
+// 获取模式覆盖设置
+export const getModeOverrides = (): Record<string, boolean> => {
+  try {
+    const stored = localStorage.getItem(MODE_OVERRIDES_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+// 设置剧本的AI模式覆盖（不会影响原有剧本文件）
+export const setScriptAIMode = (scriptId: string, useAIMode: boolean): void => {
+  const overrides = getModeOverrides();
+  if (useAIMode) {
+    overrides[scriptId] = true;
+  } else {
+    // 删除覆盖，恢复自动判断
+    delete overrides[scriptId];
+  }
+  localStorage.setItem(MODE_OVERRIDES_KEY, JSON.stringify(overrides));
+};
+
+// 获取剧本是否使用AI模式
+export const getScriptUseAIMode = (scriptId: string): boolean | undefined => {
+  const overrides = getModeOverrides();
+  // 如果有覆盖设置，返回覆盖值
+  if (scriptId in overrides) {
+    return overrides[scriptId];
+  }
+  // 否则返回 undefined，让调用方使用自动判断
+  return undefined;
+};
+
+// 重置剧本模式为自动判断
+export const resetScriptMode = (scriptId: string): void => {
+  const overrides = getModeOverrides();
+  delete overrides[scriptId];
+  localStorage.setItem(MODE_OVERRIDES_KEY, JSON.stringify(overrides));
+};
+
+// ============ 剧情生成记录 ============
+
 // 获取已生成剧情的记录
 export const getGeneratedPlots = (): Record<string, string> => {
   try {
@@ -122,15 +167,25 @@ export const getAllScripts = (): ScriptTemplate[] => {
       userScripts = userScripts.filter(s => !isPresetScript(s.id));
     }
     
-    // 为预设剧本填充已生成的剧情
+    // 获取模式覆盖和剧情记录
+    const modeOverrides = getModeOverrides();
     const plots = getGeneratedPlots();
+    
+    // 为预设剧本填充已生成的剧情和模式覆盖
     const presetsWithPlots = ALL_PRESET_SCRIPTS.map(script => ({
       ...script,
-      plotFramework: plots[script.id] || script.plotFramework
+      plotFramework: plots[script.id] || script.plotFramework,
+      useAIMode: modeOverrides[script.id]  // 应用模式覆盖
+    }));
+    
+    // 用户剧本也应用模式覆盖
+    const userScriptsWithMode = userScripts.map(script => ({
+      ...script,
+      useAIMode: script.useAIMode ?? modeOverrides[script.id]
     }));
     
     // 预设剧本在前，用户剧本在后
-    return [...presetsWithPlots, ...userScripts];
+    return [...presetsWithPlots, ...userScriptsWithMode];
   } catch (e) {
     console.error('Failed to load scripts:', e);
   }
@@ -180,7 +235,8 @@ export const createScript = (
   character: CharacterConfig,
   plotFramework: string,
   setting: string,
-  description: string = ''
+  description: string = '',
+  useAIMode?: boolean  // 是否使用AI模式
 ): ScriptTemplate => {
   const newScript: ScriptTemplate = {
     id: `script_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -190,7 +246,8 @@ export const createScript = (
     character,
     setting,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
+    useAIMode
   };
   
   saveScript(newScript);
