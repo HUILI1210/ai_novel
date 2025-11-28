@@ -1,0 +1,195 @@
+{
+  "id": "preset_princess",
+  "title": "白金蔷薇：温柔公主的骑士誓约",
+  "chapters": [
+    {
+      "id": "chapter_01",
+      "title": "序章：蔷薇庭院的初遇",
+      "background": "PALACE_GARDEN",
+      "bgm": "romantic",
+      "dialogues": [
+        { "speaker": "旁白", "text": "艾尔兰王国的正午，阳光有些刺眼。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "我身着崭新的银白铠甲，铁靴踏在碎石路上，发出沉闷的声响。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "空气中弥漫着蔷薇花的香气，我深吸一口气，试图平复第一次觐见公主的紧张。", "expression": "NEUTRAL" },
+        { "type": "cg", "cg": "cg1.png", "text": "花园长椅上，艾琳娜捧书阅读，阳光洒在金发上，浑身散发着柔光" },
+        { "speaker": "旁白", "text": "转过花墙，我停下了脚步。时间仿佛在这一刻凝固。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "艾琳娜公主静静地坐在白色大理石长椅上，一头如流金般的长卷发垂落在肩头，在阳光下泛着蜂蜜般的光泽。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（听到脚步声，长长的睫毛颤动，缓缓抬起头）", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "啊……你来了，骑士先生。", "expression": "HAPPY" },
+        { "speaker": "旁白", "text": "没有传闻中王室的高傲，她的声音轻柔得像羽毛划过心尖。", "expression": "HAPPY" },
+        { "speaker": "我", "text": "（单膝跪地，低下头）参见公主殿下。我是您的新任护卫。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（合上厚重的古籍，双手交叠在膝头，优雅起身）快请起。", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "父王说给我安排了一位最优秀的骑士……见到你，我便知道父王没有骗我。", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "你看起来，真的很可靠呢。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（向你伸出白皙的手，指尖透着健康的粉色）", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "从今日起，我的安全与信任，就全部交付于你了。", "expression": "BLUSH" },
+        { "speaker": "我", "text": "（握住她的指尖，触感温软如玉）誓死守护您，殿下。", "expression": "NEUTRAL" }
+      ],
+      "choices": [
+        { "text": "紧握她的手，郑重承诺", "sentiment": "positive", "affectionChange": 3 },
+        { "text": "礼貌地轻触后松开", "sentiment": "neutral", "affectionChange": 1 },
+        { "text": "（心跳加速，有些紧张）", "sentiment": "positive", "affectionChange": 2 }
+      ]
+    },
+    {
+      "id": "chapter_02",
+      "title": "第一章：图书馆的微光与体态",
+      "background": "PALACE_HALL",
+      "bgm": "peaceful",
+      "dialogues": [
+        { "speaker": "旁白", "text": "入职第三天。艾琳娜公主喜欢在午后阅读。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "图书馆很高，书架直通穹顶。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（站在高大的书架前，仰起修长的脖颈）", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "嗯……那一本《古王国史》，好像太高了。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "她试图踮起脚尖去够那本书。", "expression": "NEUTRAL" },
+        { "type": "cg", "cg": "cg2.jpg", "text": "裙摆因动作上提，特写露出包裹在透肉白丝中的脚踝，足弓紧绷" },
+        { "speaker": "艾琳娜", "text": "（指尖刚刚碰到书脊，身体却晃动了一下）呀！", "expression": "SURPRISED" },
+        { "speaker": "我", "text": "（身体比大脑更快，一步上前，双手稳稳托住她的腰）殿下小心！", "expression": "SURPRISED" },
+        { "speaker": "旁白", "text": "掌心传来的触感柔软而温热，隔着薄薄的衣料，我能清晰地感受到她腰肢的纤细与弹性。", "expression": "BLUSH" },
+        { "speaker": "旁白", "text": "那一瞬间，她的身体僵硬了一下，随后软软地靠在了我的胸甲上。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（站稳后，脸颊飞起两朵红云，有些慌乱地整理裙摆）", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "呼……谢谢你。你的手……很有力，也很温暖。", "expression": "BLUSH" },
+        { "speaker": "我", "text": "（立刻后退一步，守礼地低头）殿下，这种粗活请务必交给我。您不必亲自冒险。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（抱着书本，转过身看着我，眼中闪烁着温柔的光）", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "嗯。有你在身边……我真的感到很安心。那就拜托你了，我的骑士。", "expression": "HAPPY" }
+      ],
+      "choices": [
+        { "text": "「我会永远守护您」", "sentiment": "positive", "affectionChange": 3 },
+        { "text": "「这是我的职责」", "sentiment": "neutral", "affectionChange": 1 },
+        { "text": "（默默点头，内心悸动）", "sentiment": "positive", "affectionChange": 2 }
+      ]
+    },
+    {
+      "id": "chapter_03",
+      "title": "第二章：破碎的白丝与共犯",
+      "background": "ABANDONED_GARDEN",
+      "bgm": "melancholy",
+      "dialogues": [
+        { "speaker": "旁白", "text": "为了躲避北方公爵的逼婚，心情低落的艾琳娜带我来到了这片无人的废园。", "expression": "SAD" },
+        { "speaker": "旁白", "text": "她走得很急，仿佛想逃离那个压抑的王宫。", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "嘶……好疼。", "expression": "SAD" },
+        { "type": "cg", "cg": "cg3.png", "text": "艾琳娜坐在石头上，小腿处的白丝被荆棘划破，渗出一丝血迹" },
+        { "speaker": "旁白", "text": "一株横生的野蔷薇，无情地勾住了她的裙角。那昂贵精致的纯白丝袜被锋利的刺划破，一道长长的裂口横亘在小腿上。", "expression": "SAD" },
+        { "speaker": "旁白", "text": "鲜红的血珠从白皙的肌肤中渗出，染红了洁白的丝线。", "expression": "SAD" },
+        { "speaker": "我", "text": "（单膝跪地，不顾地上的泥泞）殿下，请别动。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（有些羞耻地缩了缩脚，脚趾在白丝中不安地蜷缩）", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "抱歉……我太笨手笨脚了，竟然弄坏了袜子，还受了伤……这样子，一定很难看吧？", "expression": "SAD" },
+        { "speaker": "我", "text": "（拿出急救包，握住她纤细的脚踝）不，殿下。即便受伤，您依然是最高贵的。请忍耐一下。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "隔着丝袜细腻滑顺的触感，我能感受到她肌肤的微凉。当我用药棉轻轻擦拭伤口周围时，她敏感地颤抖了一下，小腿肌肉微微紧绷。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（咬着下唇，低头看着专注的我，眼神逐渐变得迷离）", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "在这个冷冰冰的王宫里，只有你会跪在泥里，像对待珍宝一样对待我的伤口。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（她伸出手，轻轻抚摸过我的头盔）谢谢你……真的。", "expression": "HAPPY" }
+      ],
+      "choices": [
+        { "text": "「能为您效劳是我的荣幸」", "sentiment": "positive", "affectionChange": 3 },
+        { "text": "「您的安全是最重要的」", "sentiment": "neutral", "affectionChange": 1 },
+        { "text": "（抬头与她对视，心跳加速）", "sentiment": "positive", "affectionChange": 2 }
+      ]
+    },
+    {
+      "id": "chapter_04",
+      "title": "第三章：晚宴的拥抱与宣示",
+      "background": "PALACE_BALCONY",
+      "bgm": "dramatic",
+      "dialogues": [
+        { "speaker": "旁白", "text": "建国日晚宴。艾琳娜换上了一袭更加贴身的白金晚礼服，高开叉的设计让那双珠光白丝美腿若隐若现，引来无数贪婪的目光。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "那个该死的北方公爵，借着酒劲将她逼到了角落。", "expression": "ANGRY" },
+        { "speaker": "公爵", "text": "（语气猥琐）公主殿下的腿真美啊，这丝袜的手感一定不错吧？", "expression": "ANGRY" },
+        { "speaker": "艾琳娜", "text": "（脸色苍白，身体微微发抖，无助地看向我）请您自重……", "expression": "FEAR" },
+        { "speaker": "我", "text": "（怒火中烧，大步上前，解下身后沉重的天鹅绒披风，一把将她裹住）", "expression": "ANGRY" },
+        { "speaker": "我", "text": "公爵阁下，这里风大，殿下体弱。请、您、让、开。", "expression": "ANGRY" },
+        { "speaker": "旁白", "text": "我的手按在剑柄上，杀气四溢。公爵被吓退了。", "expression": "NEUTRAL" },
+        { "speaker": "旁白", "text": "披风之下，艾琳娜紧紧抓着我的衣襟，整个人贴在我的胸膛上。我能感受到她胸口的剧烈起伏，那是她柔软的身体对我毫无保留的依赖。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（声音带着哭腔，埋首在我怀里）", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "别松开……求你，再抱一会儿。只有在你怀里，我才觉得自己是安全的。", "expression": "SAD" }
+      ],
+      "choices": [
+        { "text": "「我永远不会让任何人伤害您」", "sentiment": "positive", "affectionChange": 4 },
+        { "text": "（默默收紧双臂，将她护得更紧）", "sentiment": "positive", "affectionChange": 3 },
+        { "text": "「殿下，我们离开这里吧」", "sentiment": "neutral", "affectionChange": 2 }
+      ]
+    },
+    {
+      "id": "chapter_05",
+      "title": "第四章：雨夜的誓言",
+      "background": "ROYAL_BEDROOM",
+      "bgm": "melancholy",
+      "dialogues": [
+        { "speaker": "旁白", "text": "政变前夜，窗外暴雨如注。艾琳娜遣散了侍女，只留下了我。", "expression": "SAD" },
+        { "speaker": "旁白", "text": "她卸下了白天的伪装，只穿着一件单薄的半透明睡裙，金发湿漉漉地披散在肩头。", "expression": "SAD" },
+        { "type": "cg", "cg": "cg5.png", "text": "艾琳娜赤脚站在地毯上，白丝长筒袜勒出大腿丰润的肉感，泪眼婆娑" },
+        { "speaker": "旁白", "text": "烛光摇曳，勾勒出她曼妙的身体轮廓。她没有穿鞋，赤脚踩在深红色的地毯上，双腿依然套着那双纯白的长筒丝袜。", "expression": "SAD" },
+        { "speaker": "旁白", "text": "精致的蕾丝袜圈紧紧勒住大腿根部丰润的肌肤，挤出一道诱人的肉感。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（走到我面前，仰起头，泪水挂在睫毛上）", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "……我很害怕。如果明天我们失败了，这一切都会消失……", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "如果我不做公主了，你还会像现在这样守护我吗？", "expression": "SAD" },
+        { "speaker": "我", "text": "（单膝跪地，捧起她戴着白丝手套的手，吻在手背）", "expression": "NEUTRAL" },
+        { "speaker": "我", "text": "无论您是高高在上的女王，还是流落街头的平民。我的剑，只为您挥舞。我的心，只为您跳动。", "expression": "NEUTRAL" },
+        { "speaker": "艾琳娜", "text": "（泪水滑落，她突然俯身，紧紧抱住我的头）", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "笨蛋……谁要你的剑。我要的是你。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（她在我的耳边轻声呢喃）活下来。为了我，一定要活下来。", "expression": "BLUSH" }
+      ],
+      "choices": [
+        { "text": "「我发誓，一定会活着回到您身边」", "sentiment": "positive", "affectionChange": 5 },
+        { "text": "（紧紧回抱她，无声承诺）", "sentiment": "positive", "affectionChange": 4 },
+        { "text": "「明天，我们一定会胜利」", "sentiment": "neutral", "affectionChange": 2 }
+      ]
+    },
+    {
+      "id": "chapter_06",
+      "title": "第五章：血色黎明与女王觉醒",
+      "background": "TRAINING_GROUND",
+      "bgm": "intense",
+      "dialogues": [
+        { "speaker": "旁白", "text": "叛军攻破了宫门。我护着艾琳娜一路杀到城墙。", "expression": "ANGRY" },
+        { "speaker": "旁白", "text": "鲜血染红了我的银甲，也溅在她洁白的裙摆上。一支冷箭射来——", "expression": "ANGRY" },
+        { "speaker": "我", "text": "（猛地转身，用后背挡住利箭）唔！", "expression": "SAD" },
+        { "speaker": "艾琳娜", "text": "（尖叫）不！！", "expression": "FEAR" },
+        { "speaker": "旁白", "text": "我倒下了。但我看到了令我震惊的一幕。", "expression": "SURPRISED" },
+        { "speaker": "旁白", "text": "那个总是躲在我身后、温柔哭泣的公主，捡起了我掉落的长剑。她挡在我身前，虽然双手在颤抖，但眼神却变得无比坚定。", "expression": "SURPRISED" },
+        { "speaker": "艾琳娜", "text": "（对着叛军嘶吼）我是艾尔兰的长公主！", "expression": "ANGRY" },
+        { "speaker": "艾琳娜", "text": "谁敢再前进一步，我就让他付出代价！想杀他，先跨过我的尸体！", "expression": "ANGRY" },
+        { "speaker": "旁白", "text": "那一刻，柔弱的蔷薇生出了尖刺。她在战火中觉醒，成为了真正的女王。", "expression": "HAPPY" }
+      ],
+      "choices": [
+        { "text": "（挣扎着站起来，与她并肩作战）", "sentiment": "positive", "affectionChange": 5 },
+        { "text": "「殿下……您真的很强」", "sentiment": "positive", "affectionChange": 3 },
+        { "text": "（用尽最后的力气保护她）", "sentiment": "positive", "affectionChange": 4 }
+      ]
+    },
+    {
+      "id": "chapter_07",
+      "title": "终章：加冕之夜",
+      "background": "ROYAL_BEDROOM",
+      "bgm": "romantic",
+      "dialogues": [
+        { "speaker": "旁白", "text": "叛乱平定，三个月后。盛大的加冕典礼刚刚结束。", "expression": "HAPPY" },
+        { "speaker": "旁白", "text": "喧嚣散去，艾琳娜将我带进了寝宫。随着厚重的门锁「咔哒」一声扣上，整个世界只剩下我们两人。", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "（背对着我，声音带着一丝颤抖和羞涩）别动，就在那里看着我。", "expression": "BLUSH" },
+        { "speaker": "旁白", "text": "她摘下了那顶沉重的王冠，随手放在天鹅绒桌布上。然后，她的手伸向背后，解开了礼服的系带。", "expression": "BLUSH" },
+        { "speaker": "旁白", "text": "华丽的白金礼服如雪崩般滑落，堆叠在她脚边。", "expression": "BLUSH" },
+        { "type": "cg", "cg": "cg6.jpg", "text": "艾琳娜转身，仅穿丝绸吊带裙和白丝，月光洒在身上" },
+        { "speaker": "旁白", "text": "在那层层叠叠的布料之下，她只穿着一件极薄的丝绸吊带衬裙。以及……那一双象征着纯洁与尊贵的——蕾丝白丝长筒袜。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（脸颊绯红，眼波流转，一步步走向我）", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "现在的我，不是女王。我是你的艾琳娜。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "帮我……把这最后一点束缚，也拿走吧。", "expression": "BLUSH" },
+        { "speaker": "我", "text": "（呼吸变得急促，伸手揽住她纤细的腰肢）遵命，我的女王。", "expression": "BLUSH" },
+        { "speaker": "旁白", "text": "柔软的羽绒将被我们压陷。她金色的长发散乱在枕头上，如同盛开的花海。", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "（微微喘息，手指划过我的胸膛）这双袜子……我特意留着。我知道你喜欢。", "expression": "BLUSH" },
+        { "speaker": "我", "text": "它很美，很圣洁……但我现在，只想彻底占有你。", "expression": "BLUSH" },
+        { "speaker": "艾琳娜", "text": "（轻笑，带着一丝挑衅与献祭般的决绝）那就不要客气。弄脏它……或者撕碎它。只要是你，怎么都可以。", "expression": "HAPPY" },
+        { "type": "cg", "cg": "cg7.png", "text": "特写镜头，手掌紧紧扣住白丝包裹的大腿，肌肤下陷，两人十指紧扣" },
+        { "speaker": "旁白", "text": "我不再克制。丝袜摩擦肌肤发出的细微沙沙声，混合着彼此逐渐粗重的呼吸，成为了今晚最动人的乐章。", "expression": "HAPPY" },
+        { "speaker": "旁白", "text": "所有的身份、阶级、礼法，都在这滚烫的体温中烟消云散。", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "（意乱情迷中的呢喃，紧紧攀附着我的背脊）", "expression": "HAPPY" },
+        { "speaker": "艾琳娜", "text": "唔……我爱你……永远……你是我的骑士，我的爱人，我唯一的王。", "expression": "HAPPY" },
+        { "speaker": "旁白", "text": "这一夜，骑士终于拥有了他的蔷薇。灵与肉，在这一刻达成了永恒的契约。", "expression": "HAPPY" }
+      ],
+      "ending": {
+        "type": "true_end",
+        "title": "白金蔷薇 · 誓约永恒",
+        "description": "🎉 恭喜达成 True End：真爱加冕\n🔓 已解锁全CG画廊\n🔓 已解锁回想模式"
+      }
+    }
+  ]
+}
