@@ -4,6 +4,7 @@
  */
 
 import { CharacterExpression, BackgroundType, BgmMood, SceneData, GameChoice } from '../types';
+import { getAssetPath } from '../utils/assetPath';
 
 // 剧本对话节点
 export interface ScriptDialogue {
@@ -126,7 +127,7 @@ export const loadScript = async (scriptId: string): Promise<FullScript | null> =
   }
 
   try {
-    const response = await fetch(path);
+    const response = await fetch(getAssetPath(path));
     if (!response.ok) {
       throw new Error(`加载剧本失败: ${response.status}`);
     }
@@ -154,7 +155,7 @@ export const dialogueToSceneData = (
     const storyFolder = scriptId === 'preset_princess' ? '02_princess_elena' : 
                         scriptId === 'preset_tsundere' ? '01_tsundere_wenxi' : 
                         '03_courtesan_liuruyan';
-    cgPath = `/stories/${storyFolder}/cg/${dialogue.cg}`;
+    cgPath = getAssetPath(`/stories/${storyFolder}/cg/${dialogue.cg}`);
   }
 
   // 构建基础场景数据

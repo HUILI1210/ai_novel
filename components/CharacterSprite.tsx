@@ -1,45 +1,47 @@
 import React, { memo, useState, useEffect, useMemo } from 'react';
 import { CharacterExpression } from '../types';
+import { getAssetPath } from '../utils/assetPath';
 import '../styles/animations.css';
 
 // 角色图片配置 - 支持多角色
 type CharacterImageSet = Record<CharacterExpression, string>;
 
-const CHARACTER_IMAGES: Record<string, CharacterImageSet> = {
+// 获取角色图片路径的函数
+const getCharacterImages = (): Record<string, CharacterImageSet> => ({
   // 雯曦 - 傲娇青梅竹马 (stories/01_tsundere_wenxi/expressions/)
   '雯曦': {
-    [CharacterExpression.NEUTRAL]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-    [CharacterExpression.HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png',
-    [CharacterExpression.SAD]: '/stories/01_tsundere_wenxi/expressions/wenxi_sad.png',
-    [CharacterExpression.ANGRY]: '/stories/01_tsundere_wenxi/expressions/wenxi_angry.png',
-    [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.NEUTRAL]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png'),
+    [CharacterExpression.HAPPY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'),
+    [CharacterExpression.SAD]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_sad.png'),
+    [CharacterExpression.ANGRY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_angry.png'),
+    [CharacterExpression.BLUSH]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_blush.png'),
+    [CharacterExpression.SURPRISED]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'),
+    [CharacterExpression.SHY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_blush.png'),
+    [CharacterExpression.FEAR]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'),
   },
   // 艾琳娜 - 白金蔷薇公主 (stories/02_princess_elena/expressions/)
   '艾琳娜': {
-    [CharacterExpression.NEUTRAL]: '/stories/02_princess_elena/expressions/smiling.png',
-    [CharacterExpression.HAPPY]: '/stories/02_princess_elena/expressions/smiling.png',
-    [CharacterExpression.SAD]: '/stories/02_princess_elena/expressions/sadness.png',
-    [CharacterExpression.ANGRY]: '/stories/02_princess_elena/expressions/anger.png',
-    [CharacterExpression.BLUSH]: '/stories/02_princess_elena/expressions/blushing.png',
-    [CharacterExpression.SURPRISED]: '/stories/02_princess_elena/expressions/surprise.png',
-    [CharacterExpression.SHY]: '/stories/02_princess_elena/expressions/blushing.png',
-    [CharacterExpression.FEAR]: '/stories/02_princess_elena/expressions/sadness.png',
+    [CharacterExpression.NEUTRAL]: getAssetPath('/stories/02_princess_elena/expressions/smiling.png'),
+    [CharacterExpression.HAPPY]: getAssetPath('/stories/02_princess_elena/expressions/smiling.png'),
+    [CharacterExpression.SAD]: getAssetPath('/stories/02_princess_elena/expressions/sadness.png'),
+    [CharacterExpression.ANGRY]: getAssetPath('/stories/02_princess_elena/expressions/anger.png'),
+    [CharacterExpression.BLUSH]: getAssetPath('/stories/02_princess_elena/expressions/blushing.png'),
+    [CharacterExpression.SURPRISED]: getAssetPath('/stories/02_princess_elena/expressions/surprise.png'),
+    [CharacterExpression.SHY]: getAssetPath('/stories/02_princess_elena/expressions/blushing.png'),
+    [CharacterExpression.FEAR]: getAssetPath('/stories/02_princess_elena/expressions/sadness.png'),
   },
   // 柳如烟 - 古风花魁 (暂用雯曦图片作为占位)
   '柳如烟': {
-    [CharacterExpression.NEUTRAL]: '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-    [CharacterExpression.HAPPY]: '/stories/01_tsundere_wenxi/expressions/wenxi_happy.png',
-    [CharacterExpression.SAD]: '/stories/01_tsundere_wenxi/expressions/wenxi_sad.png',
-    [CharacterExpression.ANGRY]: '/stories/01_tsundere_wenxi/expressions/wenxi_angry.png',
-    [CharacterExpression.BLUSH]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.SURPRISED]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
-    [CharacterExpression.SHY]: '/stories/01_tsundere_wenxi/expressions/wenxi_blush.png',
-    [CharacterExpression.FEAR]: '/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png',
+    [CharacterExpression.NEUTRAL]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png'),
+    [CharacterExpression.HAPPY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_happy.png'),
+    [CharacterExpression.SAD]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_sad.png'),
+    [CharacterExpression.ANGRY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_angry.png'),
+    [CharacterExpression.BLUSH]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_blush.png'),
+    [CharacterExpression.SURPRISED]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'),
+    [CharacterExpression.SHY]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_blush.png'),
+    [CharacterExpression.FEAR]: getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_surprised.png'),
   }
-};
+});
 
 // 默认使用雯曦的图片
 const DEFAULT_CHARACTER = '雯曦';
@@ -63,7 +65,8 @@ export const CharacterSprite: React.FC<CharacterSpriteProps> = memo(({
   
   // 获取当前角色的图片集
   const characterImages = useMemo(() => {
-    return CHARACTER_IMAGES[characterName] || CHARACTER_IMAGES[DEFAULT_CHARACTER];
+    const images = getCharacterImages();
+    return images[characterName] || images[DEFAULT_CHARACTER];
   }, [characterName]);
   
   const fallbackImage = characterImages[CharacterExpression.NEUTRAL];

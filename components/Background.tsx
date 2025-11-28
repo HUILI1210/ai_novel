@@ -1,5 +1,6 @@
 import React, { useMemo, memo, useState } from 'react';
 import { BackgroundType } from '../types';
+import { getAssetPath } from '../utils/assetPath';
 import '../styles/animations.css';
 
 interface BackgroundProps {
@@ -153,7 +154,11 @@ export const Background: React.FC<BackgroundProps> = memo(({ type, parallaxOffse
   const [cgLoaded, setCgLoaded] = useState(false);
 
   const scene = useMemo(() => {
-    return SCENE_BACKGROUNDS[type] || SCENE_BACKGROUNDS[BackgroundType.SCHOOL_ROOFTOP];
+    const baseScene = SCENE_BACKGROUNDS[type] || SCENE_BACKGROUNDS[BackgroundType.SCHOOL_ROOFTOP];
+    return {
+      ...baseScene,
+      imageUrl: getAssetPath(baseScene.imageUrl)
+    };
   }, [type]);
 
   // 是否处于CG显示模式

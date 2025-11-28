@@ -5,19 +5,21 @@ import { getBestEnding, getEndingDescription } from '../services/gameRecordServi
 import { generateFullPlot } from '../services/aiService';
 import { ScriptEditor } from './ScriptEditor';
 import { hasPreloadedScript } from '../services/scriptPlayerService';
+import { getAssetPath } from '../utils/assetPath';
 
 // 模式筛选类型
 type ModeFilter = 'all' | 'script' | 'ai';
 
 // 角色预览图映射 (从 stories 文件夹加载)
-const CHARACTER_PREVIEW_IMAGES: Record<string, string> = {
-  '雯曦': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png',
-  '艾琳娜': '/stories/02_princess_elena/expressions/smiling.png',
-  '柳如烟': '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png', // TODO: 生成柳如烟的立绘
-};
+const getCharacterPreviewImages = (): Record<string, string> => ({
+  '雯曦': getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png'),
+  '艾琳娜': getAssetPath('/stories/02_princess_elena/expressions/smiling.png'),
+  '柳如烟': getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png'), // TODO: 生成柳如烟的立绘
+});
 
 const getCharacterPreviewImage = (characterName: string): string => {
-  return CHARACTER_PREVIEW_IMAGES[characterName] || '/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png';
+  const images = getCharacterPreviewImages();
+  return images[characterName] || getAssetPath('/stories/01_tsundere_wenxi/expressions/wenxi_neutral.png');
 };
 
 interface ScriptLibraryProps {
