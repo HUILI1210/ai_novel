@@ -27,6 +27,7 @@ import { getAllScripts } from './services/scriptLibraryService';
 import { getCharacterByScriptId } from './constants/storyAssets';
 import { saveGame, SaveData, getSaveIndex } from './services/saveService';
 import { hasPreloadedScript } from './services/scriptPlayerService';
+import { preloadScriptAssets, preloadCharacterExpressions } from './utils/imagePreloader';
 import './styles/animations.css';
 
 // 初始化Worker服务
@@ -224,8 +225,14 @@ const App: React.FC = () => {
   }, [gameState.gameStarted, gameState.isPaused, gameState.isLoading, showChoices, showSaveModal, showLoadModal, showHistory, togglePause, handleNextDialogue]);
 
   // 处理剧本选择
-  const handleSelectScript = (script: ScriptTemplate) => {
+  const handleSelectScript = async (script: ScriptTemplate) => {
     setShowScriptLibrary(false);
+    
+    // 立即开始预加载该剧本的资源
+    preloadScriptAssets(script.id);
+    if (script.character?.name) {
+      preloadCharacterExpressions(script.character.name);
+    }
     
     // 判断使用剧本模式还是AI模式
     // 优先级: 1. 显式设置 useAIMode=true 时使用AI模式
