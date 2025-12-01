@@ -1,8 +1,17 @@
-const CACHE_NAME = 'ai-novel-v1';
-const urlsToCache = [
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE = `ai-novel-static-${CACHE_VERSION}`;
+const IMAGE_CACHE = `ai-novel-images-${CACHE_VERSION}`;
+const AUDIO_CACHE = `ai-novel-audio-${CACHE_VERSION}`;
+
+// 核心静态资源
+const staticAssets = [
   '/',
   '/index.html',
   '/manifest.json',
+];
+
+// 音频资源（预缓存）
+const audioAssets = [
   'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112778.mp3',
   'https://cdn.pixabay.com/download/audio/2024/09/16/audio_4123547f6d.mp3?filename=happy-day-240507.mp3',
   'https://cdn.pixabay.com/download/audio/2021/11/24/audio_8233772213.mp3?filename=sad-piano-111555.mp3',
@@ -11,30 +20,41 @@ const urlsToCache = [
   'https://cdn.pixabay.com/download/audio/2022/10/25/audio_5d2b378051.mp3?filename=mystery-124317.mp3'
 ];
 
+// 图片缓存大小限制（100张）
+const IMAGE_CACHE_LIMIT = 100;
+
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Service Worker: Installation complete');
-        return self.skipWaiting();
-      })
+    Promise.all([
+      // 缓存静态资源
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('Service Worker: Caching static assets');
+        return cache.addAll(staticAssets);
+      }),
+      // 缓存音频资源
+      caches.open(AUDIO_CACHE).then((cache) => {
+        console.log('Service Worker: Caching audio assets');
+        return cache.addAll(audioAssets);
+      }),
+    ]).then(() => {
+      console.log('Service Worker: Installation complete');
+      return self.skipWaiting();
+    })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...');
+  const currentCaches = [STATIC_CACHE, IMAGE_CACHE, AUDIO_CACHE];
+  
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (!currentCaches.includes(cacheName)) {
             console.log('Service Worker: Removing old cache', cacheName);
             return caches.delete(cacheName);
           }
@@ -47,50 +67,101 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache when offline
+// 检查是否是图片请求
+function isImageRequest(url) {
+  return /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url) || url.includes('/stories/');
+}
+
+// 检查是否是音频请求
+function isAudioRequest(url) {
+  return /\.mp3$/i.test(url) || url.includes('pixabay.com');
+}
+
+// 限制图片缓存大小
+async function trimImageCache() {
+  const cache = await caches.open(IMAGE_CACHE);
+  const keys = await cache.keys();
+  
+  if (keys.length > IMAGE_CACHE_LIMIT) {
+    // 删除最旧的缓存
+    const toDelete = keys.length - IMAGE_CACHE_LIMIT;
+    for (let i = 0; i < toDelete; i++) {
+      await cache.delete(keys[i]);
+    }
+  }
+}
+
+// Fetch event - 智能缓存策略
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests for AI APIs and dynamic image URLs
-  if (event.request.url.includes('/dashscope-api') || 
-      event.request.url.includes('generativelanguage.googleapis.com') ||
-      event.request.url.includes('dashscope-result-bj.oss-cn-beijing.aliyuncs.com')) {
+  const url = event.request.url;
+  
+  // 跳过 AI API 请求
+  if (url.includes('/dashscope-api') || 
+      url.includes('generativelanguage.googleapis.com') ||
+      url.includes('dashscope-result-bj.oss-cn-beijing.aliyuncs.com')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
+  // 图片请求：Cache First + 后台更新
+  if (isImageRequest(url)) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        
+        // 后台更新（Stale While Revalidate）
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+            trimImageCache(); // 限制缓存大小
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse);
+
+        // 优先返回缓存
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // 音频请求：Cache First
+  if (isAudioRequest(url)) {
+    event.respondWith(
+      caches.open(AUDIO_CACHE).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
         }
+        
+        const networkResponse = await fetch(event.request);
+        if (networkResponse && networkResponse.status === 200) {
+          cache.put(event.request, networkResponse.clone());
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Clone the response
+  // 其他请求：Network First + 缓存回退
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // 缓存成功的静态资源响应
+        if (response && response.status === 200) {
           const responseToCache = response.clone();
-
-          // Cache audio files and static assets
-          if (event.request.url.includes('.mp3') || 
-              event.request.url.includes('.css') || 
-              event.request.url.includes('.js')) {
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+          
+          if (url.includes('.css') || url.includes('.js') || url.includes('.html')) {
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-
-          return response;
-        }).catch(() => {
-          // Return cached version for failed requests
-          return caches.match(event.request);
-        });
+        }
+        return response;
+      })
+      .catch(() => {
+        // 网络失败时返回缓存
+        return caches.match(event.request);
       })
   );
 });

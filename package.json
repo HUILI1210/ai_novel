@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "optimize:images": "node scripts/optimizeImages.js",
+    "build:optimized": "npm run optimize:images && vite build"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
@@ -21,6 +23,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "sharp": "^0.34.5",
+    "terser": "^5.44.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "ws": "^8.18.3"
